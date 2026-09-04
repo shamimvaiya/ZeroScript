@@ -1,0 +1,10 @@
+{
+  "name": "com.zeroscript.agent",
+  "description": "ZeroScript Universal Local Agent Host",
+  "path": "native_host.bat",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://*/*"
+  ]
+}
+

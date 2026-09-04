@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>ZeroScript Universal Control Center</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="brand">
+        <div id="bridge-dot" class="brand-dot"></div>
+        <span>ZeroScript Universal</span>
+      </div>
+      <span id="version" class="version-badge">v1.5.3</span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab-overview">Overview</button>
+      <button class="tab-btn" data-tab="tab-connectors">Connectors</button>
+      <button class="tab-btn" data-tab="tab-activity">Activity</button>
+      <button class="tab-btn" data-tab="tab-providers">AI Sites</button>
+      <button class="tab-btn" data-tab="tab-settings">Settings</button>
+    </div>
+
+    <!-- Tab 1: Overview -->
+    <div id="tab-overview" class="tab-pane active">
+      <div class="card">
+        <div class="card-title">
+          <span>Agent & Runtime Status</span>
+          <span id="agent-badge" class="badge">Offline</span>
+        </div>
+        <div class="status-row">
+          <span>Local Bridge (127.0.0.1)</span>
+          <span id="bridge-status" class="badge danger">Disconnected</span>
+        </div>
+        <div class="status-row">
+          <span>Active Connector</span>
+          <span id="active-connector-badge" class="badge info">Roblox Studio</span>
+        </div>
+        <div class="status-row">
+          <span>AI Site (Active Tab)</span>
+          <span id="detected-ai-badge" class="badge">Checking…</span>
+        </div>
+        <div class="status-row">
+          <span>Available Tools</span>
+          <span id="tools-count" class="badge">0 tools</span>
+        </div>
+      </div>
+
+      <div class="card" id="roblox-card">
+        <div class="card-title">Roblox Studio Integration</div>
+        <div class="status-row">
+          <span>Studio Process</span>
+          <span id="studio-proc-status" class="badge">Closed</span>
+        </div>
+        <div class="status-row">
+          <span>MCP Server Link</span>
+          <span id="mcp-server-status" class="badge">Down</span>
+        </div>
+        <div class="status-row">
+          <span>Active Place Loaded</span>
+          <span id="studio-place-status" class="badge">No Place Open</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div id="native-controls" style="margin-bottom: 8px;">
+        <button id="btn-start-agent" class="btn btn-success" style="display:none; margin-bottom: 6px;">
+          ⚡ Start Background Agent
+        </button>
+        <div class="btn-group">
+          <button id="btn-restart-agent" class="btn" style="display:none;">⟳ Restart Agent</button>
+          <button id="btn-stop-agent" class="btn btn-danger" style="display:none;">■ Stop Agent</button>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button id="btn-reconnect" class="btn">↻ Reconnect Bridge</button>
+        <button id="btn-emergency-stop" class="btn btn-danger" title="Emergency halt all AI turns immediately">
+          🛑 Stop All
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 2: Software Connectors -->
+    <div id="tab-connectors" class="tab-pane">
+      <div class="card-title" style="margin-bottom: 6px;">Target Software Connectors</div>
+      <div id="connectors-list">
+        <!-- Rendered dynamically by popup.js -->
+      </div>
+      <p style="color: var(--text-muted); font-size: 11px; margin-top: 10px;">
+        Click any connector to switch target software. Tools will be routed accordingly without restarting.
+      </p>
+    </div>
+
+    <!-- Tab 3: Activity & Audit Log -->
+    <div id="tab-activity" class="tab-pane">
+      <div class="card-title" style="margin-bottom: 8px;">
+        <span>Recent Commands & Audit</span>
+        <button id="btn-clear-audit" class="btn" style="width: auto; padding: 2px 8px; font-size: 10px;">Clear</button>
+      </div>
+      <div id="audit-list" class="card audit-list" style="padding: 0;">
+        <div style="padding: 14px; text-align: center; color: var(--text-muted);">No commands recorded yet.</div>
+      </div>
+    </div>
+
+    <!-- Tab 4: AI Providers & Builder -->
+    <div id="tab-providers" class="tab-pane">
+      <div class="card-title" style="margin-bottom: 8px;">
+        <span>AI Website Adapters</span>
+        <button id="btn-show-builder" class="btn btn-primary" style="width: auto; padding: 3px 8px; font-size: 10px;">
+          + Add AI Website
+        </button>
+      </div>
+
+      <!-- Provider Builder Sub-panel (hidden by default) -->
+      <div id="builder-panel" class="card" style="display: none; border-color: var(--accent);">
+        <div class="card-title" style="color: #a5b4fc;">Automatic Provider Builder</div>
+        <div class="form-group">
+          <label class="form-label">AI Website URL</label>
+          <input id="builder-url" class="form-input" placeholder="https://chat.example.com" />
+        </div>
+        <div class="btn-group">
+          <button id="btn-run-discovery" class="btn btn-primary">🔍 Discover Selectors</button>
+          <button id="btn-cancel-builder" class="btn">Cancel</button>
+        </div>
+
+        <div id="builder-selectors" style="display: none; margin-top: 10px;">
+          <div class="form-group">
+            <label class="form-label">Provider Name</label>
+            <input id="sel-name" class="form-input" placeholder="e.g. My AI" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chat Input Selector</label>
+            <input id="sel-editor" class="form-input" placeholder="textarea, [contenteditable]" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Send Button Selector</label>
+            <input id="sel-send" class="form-input" placeholder="button[type=submit]" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stop Button Selector</label>
+            <input id="sel-stop" class="form-input" placeholder="button[aria-label=Stop]" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message Turn Selector</label>
+            <input id="sel-turn" class="form-input" placeholder=".message, [role=article]" />
+          </div>
+
+          <div class="btn-group">
+            <button id="btn-test-provider" class="btn">🧪 Test Selectors</button>
+            <button id="btn-save-provider" class="btn btn-success">💾 Save & Activate</button>
+          </div>
+          <div id="builder-test-res" style="margin-top: 6px; font-size: 11px;"></div>
+        </div>
+      </div>
+
+      <!-- Custom Providers List -->
+      <div id="custom-providers-list">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Built-in Providers -->
+      <div class="card" style="margin-top: 10px;">
+        <div class="card-title">Built-in Providers (9)</div>
+        <p style="color: var(--text-muted); font-size: 11px;">
+          DeepSeek, ChatGPT, Gemini, Google AI Studio, Kimi, GLM (Z.ai), Qwen, Arena.ai, Meta AI.
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab 5: Settings -->
+    <div id="tab-settings" class="tab-pane">
+      <div class="card">
+        <div class="card-title">Bridge Configuration</div>
+        <div class="status-row">
+          <span>Port</span>
+          <span class="badge">17613</span>
+        </div>
+        <div class="status-row">
+          <span>Host</span>
+          <span class="badge">127.0.0.1</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Native Background Agent</div>
+        <div class="status-row">
+          <span>Chrome Native Host</span>
+          <span id="native-host-status" class="badge">Checking…</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 11px; margin-top: 6px;">
+          To run the bridge quietly in the background without terminal windows, run <code>register_native_host.bat</code> once.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Fallback Launcher</div>
+        <p style="color: var(--text-muted); font-size: 11px;">
+          You can always run <code>start.bat</code> in the project directory for live terminal debugging.
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span id="footer-status">Ready</span>
+      <a href="https://ko-fi.com/sebattfg" target="_blank">♥ Tip on Ko-fi</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
