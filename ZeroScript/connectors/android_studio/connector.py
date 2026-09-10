@@ -14,6 +14,7 @@ class AndroidStudioConnector(BaseConnector):
     name = "Android Studio"
     description = "Controls Android project builds, Gradle tasks, and ADB device/emulator actions"
     target_software = "AndroidStudio"
+    implementation_status = "NOT IMPLEMENTED"
 
     def is_available(self) -> bool:
         if sys.platform == "win32":

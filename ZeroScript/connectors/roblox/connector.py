@@ -19,10 +19,18 @@ class RobloxStudioConnector(BaseConnector):
     name = "Roblox Studio"
     description = "Drives Roblox Studio via local MCP server integration"
     target_software = "RobloxStudio"
+    implementation_status = "AVAILABLE"
 
     def __init__(self, mcp_manager: Optional[Any] = None, config: Optional[Dict[str, Any]] = None):
         super().__init__(config)
         self.mcp_manager = mcp_manager
+
+    def get_status(self) -> str:
+        """Return AVAILABLE if active/ready, or NOT CONNECTED if Studio/MCP is offline."""
+        mcp_ok = self.mcp_manager.any_alive() if self.mcp_manager else False
+        if mcp_ok:
+            return "AVAILABLE"
+        return "NOT CONNECTED"
 
     def is_available(self) -> bool:
         """Check whether Roblox Studio executable or StudioMCP binary is present."""

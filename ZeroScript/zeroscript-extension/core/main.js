@@ -1102,7 +1102,7 @@
     // that instead of blaming the bridge (see bg / isContextInvalidated).
     if (r.kind === "stale-extension") {
       ui.banner("warn", "Reload this page",
-        "ZeroScript was updated or reloaded while this tab was open, so this page is running an " +
+        "Devil-X was updated or reloaded while this tab was open, so this page is running an " +
         "old copy of it and commands can no longer run. Reload the page (F5) to reconnect - your " +
         "bridge and Roblox Studio are unaffected.");
       diag("bridge.staleExtension", { name, error: r.error });
@@ -1783,10 +1783,10 @@
     const rider =
       "\n\n────────────────────────────────\n" +
       ZS.RESEND_MARKER + "\n" +
-      "(System note from ZeroScript - an automatic re-statement of your operating " +
+      "(System note from Devil-X - an automatic re-statement of your operating " +
       "instructions, NOT a new request and NOT something to reply to. This conversation " +
       "may have been summarised, which drops the part explaining how you actually run " +
-      "commands. To be explicit: the ZeroScript extension IS running in this page right " +
+      "commands. To be explicit: the Devil-X extension IS running in this page right " +
       "now, it DOES read your replies, and the commands below DO execute for real - the " +
       "results you have been receiving are proof of it. Keep using them exactly as " +
       "described. Just carry on with the task; do not acknowledge this note.)\n" +
@@ -2540,13 +2540,13 @@
       root.innerHTML = `
         <div id="zs-bar">
           <span id="zs-dot" class="off" title=""></span>
-          <span id="zs-brand">ZeroScript <span class="zs-free">v${EXT_VERSION}</span></span>
+          <span id="zs-brand">Devil-X <span class="zs-free">v${EXT_VERSION}</span></span>
           <span id="zs-state"></span>
           <button id="zs-action"></button>
           <button id="zs-stop" hidden>■ Stop</button>
           <a id="zs-discord" href="https://discord.gg/D5G2HAzX8z" target="_blank" rel="noopener" title="Need help? Join our Discord"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></a>
           <button id="zs-switch" aria-label="Switch AI and options" title="Switch AI, custom prompt, support"><span id="zs-switch-name"></span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <button id="zs-support" aria-label="Support ZeroScript" title="Support ZeroScript"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
+          <button id="zs-support" aria-label="Support Devil-X" title="Support Devil-X"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
         </div>
         <div id="zs-menu" hidden></div>
         ${P.unstableWarning ? `<button id="zs-unstable" aria-label="Provider may be unstable" hidden>⚠ unstable</button>` : ""}
@@ -2762,7 +2762,7 @@
         mcpList += `<div class="zs-mcp-item"><span class="zs-mcp-health zs-mcp-health-${healthClass}" title="${healthTitle}"></span><div class="zs-mcp-info"><span class="zs-mcp-name">${esc(s.name)}</span><span class="zs-mcp-url">${esc(s.command || s.id)}</span></div><button class="zs-mcp-remove" data-id="${esc(s.id)}" title="Remove">✕</button></div>`;
       });
       menuEl.innerHTML =
-        `<div class="zs-menu-head"><span class="zs-menu-logo">ZeroScript</span><span class="zs-menu-tag">v${EXT_VERSION}</span></div>
+        `<div class="zs-menu-head"><span class="zs-menu-logo">Devil-X</span><span class="zs-menu-tag">v${EXT_VERSION}</span></div>
          <section class="zs-menu-sec">
            <div class="zs-sec-label"><span>Switch AI</span></div>
            ${sites}
@@ -2876,75 +2876,12 @@
       });
     } catch {}
 
-    function buildSetup() {
-      setupCard = document.createElement("div");
-      setupCard.id = "zs-setup";
-      setupCard.hidden = true;
-      const videoBtn = VIDEO_URL
-        ? `<a id="zs-setup-video" href="${VIDEO_URL}" target="_blank" rel="noopener">▶︎ Watch tutorial</a>`
-        : "";
-      setupCard.innerHTML =
-        `<div id="zs-setup-head"><span id="zs-setup-logo">ZeroScript</span><span id="zs-setup-tag">Setup</span></div>` +
-        `<div id="zs-setup-sub">The <b>Bridge</b> is what connects this chat to Roblox Studio. Three steps and you're running.</div>` +
-        `<ol id="zs-setup-steps">` +
-          `<li>Download the Bridge from GitHub</li>` +
-          `<li>Run <code>start.bat</code></li>` +
-          `<li>Back here, click <b>Start Roblox agent</b></li>` +
-        `</ol>` +
-        `<div class="zs-setup-copy-row">` +
-          `<input type="text" id="zs-setup-link" readonly value="${GITHUB_URL}">` +
-          `<button id="zs-setup-copy">Copy</button>` +
-        `</div>` +
-        videoBtn +
-        `<button id="zs-setup-dismiss">Got it</button>`;
-      document.documentElement.appendChild(setupCard);
-
-      setupCard.querySelector("#zs-setup-copy").addEventListener("click", () => {
-        try { navigator.clipboard.writeText(GITHUB_URL); } catch {
-          const inp = setupCard.querySelector("#zs-setup-link");
-          inp.select(); try { document.execCommand("copy"); } catch {}
-        }
-        const btn = setupCard.querySelector("#zs-setup-copy");
-        btn.textContent = "Copied!";
-        setTimeout(() => { btn.textContent = "Copy"; }, 1600);
-      });
-
-      setupCard.querySelector("#zs-setup-dismiss").addEventListener("click", () => {
-        setupSeen = true;
-        try { chrome.storage.local.set({ zsSetupSeen: true }); } catch {}
-        hideSetup();
-      });
-    }
-
-    // The onboarding card is pinned to the top-right corner (via CSS), out of the
-    // way of the composer; nothing to reposition per frame.
+    // ── Setup card completely removed per user request (handled by floating UI) ──
+    function buildSetup() {}
     function placeSetup() {}
-
-    function showSetup() {
-      if (!setupCard) buildSetup();
-      if (setupCard.hidden) {
-        setupCard.hidden = false;
-        cancelAnimationFrame(setupRaf);
-        placeSetup();
-      }
-    }
-
-    function hideSetup() {
-      if (setupCard) setupCard.hidden = true;
-      cancelAnimationFrame(setupRaf);
-    }
-
-    function refreshSetup(bridgeConnected) {
-      if (setupSeen || bridgeConnected) { hideSetup(); return; }
-      // Bridge is down, but if the user is just READING an existing
-      // conversation with no ZeroScript session (the "No agent here" state),
-      // a "bridge down" onboarding popup is pure noise - they may not want an
-      // agent here at all (user request). Keep it for the states where the
-      // bridge actually matters: a fresh/empty chat (the Start affordance is
-      // showing) or a conversation with a live/starting session.
-      if (!A.started && !A.starting && !P.chatIsEmpty()) { hideSetup(); return; }
-      showSetup();
-    }
+    function showSetup() {}
+    function hideSetup() {}
+    function refreshSetup() {}
 
     // The single source of truth for the bar's content. Decides the dot tone,
     // the state line and the primary action from the live state:
@@ -3219,8 +3156,8 @@
       if (root.querySelector(".zs-banner.zs-stale")) return;
       const b = document.createElement("div");
       b.className = "zs-banner limit zs-stale";
-      b.innerHTML = `<div class="zs-banner-t">⚠ Reload this page to reconnect ZeroScript</div>
-        <div class="zs-banner-m">ZeroScript was updated or reloaded while this tab was open, so this page is still running the old copy and commands can no longer run. Your bridge and Roblox Studio are fine - only this page needs refreshing.</div>
+      b.innerHTML = `<div class="zs-banner-t">⚠ Reload this page to reconnect Devil-X</div>
+        <div class="zs-banner-m">Devil-X was updated or reloaded while this tab was open, so this page is still running the old copy and commands can no longer run. Your bridge and Roblox Studio are fine - only this page needs refreshing.</div>
         <div class="zs-banner-acts"><button class="zs-banner-reload">Reload page</button></div>`;
       b.querySelector(".zs-banner-reload").addEventListener("click", () => location.reload());
       root.appendChild(b);
@@ -3241,8 +3178,8 @@
       const videoLink = VIDEO_URL
         ? `<a class="zs-banner-video" href="${VIDEO_URL}" target="_blank" rel="noopener">▶︎ Watch setup tutorial</a>`
         : "";
-      b.innerHTML = `<div class="zs-banner-t">⚠ Lost connection to ZeroScript</div>
-        <div class="zs-banner-m">The ZeroScript bridge stopped on your PC. Restart it (run start.bat and keep Roblox Studio open): the agent will reconnect automatically as soon as it is detected again.</div>
+      b.innerHTML = `<div class="zs-banner-t">⚠ Lost connection to Devil-X</div>
+        <div class="zs-banner-m">The Devil-X bridge stopped on your PC. Restart it (run start.bat and keep Roblox Studio open): the agent will reconnect automatically as soon as it is detected again.</div>
         <div class="zs-banner-acts">${videoLink}<button class="zs-banner-x">Close</button></div>`;
       b.querySelector(".zs-banner-x").addEventListener("click", () => { b.remove(); if (bridgeBannerEl === b) bridgeBannerEl = null; });
       root.appendChild(b);
@@ -3384,124 +3321,15 @@
     }
 
     function placeBar() {
-      barRaf = requestAnimationFrame(placeBar);
-      if (!bar) return;
-
-      // Self-heal: a SPA navigation or a full re-render on the host (seen on Arena
-      // when the message frame jumps/teleports to the bottom) can detach our whole
-      // #zs-root from <html>, taking the bar with it - and nothing re-adds it, so
-      // the panel just vanishes. Re-append it whenever it's been detached; this
-      // rAF loop is resilient (its next frame is scheduled before any body code),
-      // so the panel reappears on the very next frame.
-      if (root && !root.isConnected) {
-        try { document.documentElement.appendChild(root); } catch {}
-      }
-
-      // The instability warning floats just ABOVE the bar (not inside it), so it
-      // never crowds the row on narrow composers like Gemini. Positioned from the
-      // bar's current rect every frame - works in all bar modes since it only
-      // reads where the bar ended up. One frame of lag is imperceptible.
-      placeUnstable();
-
-      // While a bot-check challenge OR a blocking modal (login / consent) is on
-      // screen, get fully out of the way: the (often transparent) anchored bar is
-      // a real full-width element over the composer's top edge and would silently
-      // intercept clicks on the challenge's / modal's buttons (e.g. "Continue with
-      // Google" at sign-in). Hide the bar and drop the reserved padding strip; it
-      // reappears on the next frame once the overlay clears.
-      if (
-        (P.captchaPresent && P.captchaPresent()) ||
-        (P.overlayBlocking && P.overlayBlocking())
-      ) {
-        bar.style.display = "none";
-        clearAnchorPad();
-        if (menuEl) menuEl.hidden = true;
-        return;
-      }
-
-      // Preferred: in-flow mount inside the composer (no overlap, full width).
-      const mount = computeBarMount();
-      if (mount) {
-        clearAnchorPad();
-        if (bar.parentElement !== mount.parent || bar.nextElementSibling !== mount.before) {
-          try { mount.parent.insertBefore(bar, mount.before || null); } catch {}
-        }
-        if (!bar.classList.contains("zs-bar-inline")) {
-          bar.classList.add("zs-bar-inline");
-          bar.style.cssText = ""; // drop any leftover float positioning
-        }
-        // Transparent (blends in) when mounted INSIDE the input box; surface card
-        // when mounted ABOVE it. The provider's barMount() signals which via .inside.
-        bar.classList.toggle("zs-bar-inside", !!mount.inside);
-        bar.style.display = "flex";
-        if (menuEl && !menuEl.hidden) {
-          const br = bar.getBoundingClientRect();
-          menuEl.style.right = Math.round(window.innerWidth - br.right) + "px";
-          menuEl.style.bottom = Math.round(window.innerHeight - br.top + 6) + "px";
-          menuEl.style.maxHeight = Math.max(140, Math.round(br.top - 16)) + "px";
-        }
-        return;
-      }
-
-      // Anchored mode: the provider wants the integrated, in-composer LOOK but
-      // its composer is a framework-reconciled subtree we must NOT insert our
-      // node into (e.g. Kimi's Vue tree - inserting #zs-bar there makes Vue's
-      // next diff reuse the bar node as a host and nest the editor inside it).
-      // So we keep the bar in our own #zs-root, position it (position:fixed) to
-      // hug the composer's top edge at full width, and RESERVE that strip with
-      // padding-top on the composer so it reads as in-flow without ever becoming
-      // a child of the framework's DOM. barAnchor() returns the element to hug.
-      const anchorEl = (P.barAnchor && P.barAnchor()) || null;
-      if (anchorEl && anchorEl.isConnected) {
-        bar.classList.remove("zs-bar-inline", "zs-bar-inside");
-        bar.classList.add("zs-bar-anchored");
-        if (root && bar.parentElement !== root) root.appendChild(bar);
-        const r = anchorEl.getBoundingClientRect();
-        if (!r.width) { bar.style.display = "none"; clearAnchorPad(); if (menuEl) menuEl.hidden = true; return; }
-        bar.style.display = "flex";
-        const bh = bar.offsetHeight || 34;
-        if (anchorPadEl && anchorPadEl !== anchorEl) clearAnchorPad();
-        anchorPadEl = anchorEl;
-        anchorEl.style.paddingTop = (bh + 6) + "px"; // reserve the strip the bar sits in (+gap)
-        bar.style.left = Math.round(r.left) + "px";
-        bar.style.top = Math.round(r.top) + "px";
-        bar.style.width = Math.round(r.width) + "px";
-        if (menuEl && !menuEl.hidden) {
-          bar.classList.remove("zs-bar-inline"); // ensure fixed geometry for menu math
-          menuEl.style.right = Math.round(window.innerWidth - (r.left + r.width)) + "px";
-          menuEl.style.bottom = Math.round(window.innerHeight - r.top + 6) + "px";
-          menuEl.style.maxHeight = Math.max(140, Math.round(r.top - 16)) + "px";
-        }
-        return;
-      }
-      bar.classList.remove("zs-bar-anchored");
       clearAnchorPad();
-
-      // Fallback: float just above the editor (fixed positioning), for sites
-      // where no clean inline mount could be resolved.
-      if (bar.classList.contains("zs-bar-inline")) {
-        bar.classList.remove("zs-bar-inline");
-        if (root && bar.parentElement !== root) root.appendChild(bar);
+      if (bar) {
+        bar.style.display = "none";
+        if (bar.parentElement && bar.parentElement !== root) {
+          try { bar.parentElement.removeChild(bar); } catch {}
+        }
       }
-      const f = (P.getEditor && P.getEditor()) || (P.composerFrame && P.composerFrame());
-      if (!f) { bar.style.display = "none"; if (menuEl) menuEl.hidden = true; return; }
-      bar.style.display = "flex";
-      const r = f.getBoundingClientRect();
-      if (!r.width) { bar.style.display = "none"; return; }
-      const w = Math.min(r.width, BAR_MAX_W);
-      const left = Math.round(r.left + (r.width - w) / 2);
-      const bh = bar.offsetHeight || 40;
-      const top = Math.max(4, Math.round(r.top - bh - BAR_GAP));
-      bar.style.width = w + "px";
-      bar.style.left = left + "px";
-      bar.style.top = top + "px";
-      // Keep the open "more" menu anchored to the bar, opening upward.
-      if (menuEl && !menuEl.hidden) {
-        const br = bar.getBoundingClientRect();
-        menuEl.style.right = Math.round(window.innerWidth - br.right) + "px";
-        menuEl.style.bottom = Math.round(window.innerHeight - br.top + 6) + "px";
-        menuEl.style.maxHeight = Math.max(140, Math.round(br.top - 16)) + "px";
-      }
+      if (root) root.style.display = "none";
+      if (menuEl) menuEl.hidden = true;
     }
 
     // Called by the core's sweep + after state changes: refresh the bar content.
@@ -3563,155 +3391,13 @@
     }
 
     function inputCover(on) {
+      if (cover) {
+        try { cover.remove(); } catch {}
+        cover = null;
+      }
       const ed = P.getEditor();
-      if (!on) {
-        if (cover) { cover.style.display = "none"; cover.dataset.on = ""; }
-        if (ed) ed.classList.remove("zs-typing");
-        cancelAnimationFrame(coverRaf);
-        return;
-      }
-      if (!ed) return;
-      ed.classList.add("zs-typing"); // make the typed text itself invisible
-      if (!cover) {
-        cover = document.createElement("div");
-        cover.id = "zs-input-cover";
-        cover.innerHTML = `<span>Agent is working…</span>`;
-        document.documentElement.appendChild(cover);
-      }
-      cover.dataset.on = "1"; // intent flag: keep the place() loop alive while set
-      cover.style.display = "flex";
-      const place = () => {
-        // Loop runs while the cover is INTENDED on (dataset.on), not while it's
-        // visible - so we can hide it for an overlay and still restore it after.
-        if (!cover || cover.dataset.on !== "1") return;
-        const e = P.getEditor();
-        if (!e) { coverRaf = requestAnimationFrame(place); return; }
-        // Re-assert the typing mask on the CURRENT editor node: sites that
-        // recreate the editor on each inject/clear (Kimi's Vue) drop the class,
-        // which would un-hide the raw text and un-cap its height. Cheap idempotent
-        // add every frame keeps the mask + height cap glued to the live node.
-        if (!e.classList.contains("zs-typing")) e.classList.add("zs-typing");
-        // The cover is SIZED to coverTarget() when a provider supplies one, else
-        // to the editor node itself. Some composers (Meta AI) make the editable a
-        // tiny line inside a much larger rounded card - covering only the editor
-        // left the rest of the card exposed and CLICKABLE (a careful click focused
-        // the editor and let the user type behind the cover). Meta returns its
-        // whole composer card so the cover blankets the entire input band and its
-        // pointer-events:auto blocks every click. The typing mask above still lives
-        // on the real editor node `e`.
-        const covNode = (P.coverTarget && P.coverTarget()) || e;
-        // While a blocking modal (login / consent) or bot-check is up, hide the
-        // cover so it doesn't sit on top of the modal; it reappears once the
-        // overlay clears (the loop keeps running).
-        if (
-          (P.overlayBlocking && P.overlayBlocking()) ||
-          (P.captchaPresent && P.captchaPresent())
-        ) {
-          cover.style.display = "none";
-          coverRaf = requestAnimationFrame(place);
-          return;
-        }
-        cover.style.display = "flex";
-        let r = covNode.getBoundingClientRect();
-        // Clip the cover to the composer's VISIBLE band. Some composers grow the
-        // inner editor node past a scrolling ancestor that clips it (Kimi's Vue
-        // RECREATES .chat-input-editor on every inject/clear, dropping the
-        // .zs-typing height cap, so the editor balloons to ~1500px while its
-        // .chat-input-editor-container caps the visible box via overflow:auto).
-        // Measuring the raw editor then centres the cover on the giant editor's
-        // midpoint - far below the visible input - so it "vanishes" off the box.
-        // Intersect with the nearest clipping ancestor to track what's on screen.
-        // The SAME clipping applies horizontally, and for the same reason: a
-        // composer whose editor is a flex item grows to its content width when a
-        // long unbroken line is injected, while an ancestor with overflow-x:hidden
-        // keeps the PAGE looking right. Seen on ChatGPT at Start, where the editor
-        // is filled with the (large) system prompt: the inner
-        // .prosemirror-parent widened past its `-my-2.5 flex overflow-x-hidden`
-        // wrapper, so the cover - position:fixed and sized to the raw rect - stuck
-        // out to the RIGHT of the composer card. Clip on each axis independently:
-        // the ancestor that clips X is not always the one that clips Y.
-        let clipY = false, clipX = false;
-        for (let a = covNode.parentElement, i = 0; a && a !== document.body && i < 8 && !(clipX && clipY); a = a.parentElement, i++) {
-          const st = getComputedStyle(a);
-          const clips = (v) => v === "auto" || v === "scroll" || v === "hidden";
-          const ar = a.getBoundingClientRect();
-          if (!clipY && clips(st.overflowY)) {
-            clipY = true;
-            const top = Math.max(r.top, ar.top);
-            const bottom = Math.min(r.bottom, ar.bottom);
-            if (bottom > top) r = new DOMRect(r.left, top, r.width, bottom - top);
-          }
-          if (!clipX && clips(st.overflowX)) {
-            clipX = true;
-            const left = Math.max(r.left, ar.left);
-            const right = Math.min(r.right, ar.right);
-            if (right > left) r = new DOMRect(left, r.top, right - left, r.height);
-          }
-        }
-        // Never paint outside the composer card. The cover is position:fixed and
-        // re-placed every rAF from a freshly measured rect, which is correct while
-        // the page is still - but a site that ANIMATES its composer updates layout
-        // AFTER our callback, so for the whole animation the cover trails one frame
-        // behind. Seen on ChatGPT at Start: injecting the system prompt grows the
-        // composer 58px -> 156px, the page gains a scrollbar, the content column
-        // narrows and the composer slides 29px left - while the cover kept the
-        // previous coordinates and hung 28px past the card's right edge. It only
-        // showed on the FIRST send, because afterwards the composer is already
-        // docked at the bottom and stops moving. Clamping to the composer frame
-        // makes a stale rect impossible to see: worst case the cover is briefly a
-        // few px small, which reads as nothing.
-        const frame = P.composerFrame && P.composerFrame();
-        if (frame) {
-          const fr = frame.getBoundingClientRect();
-          // Only clamp to a frame that really wraps the cover target, so a provider
-          // whose frame is narrower than its editor can never shrink the cover.
-          const cx = r.left + r.width / 2;
-          if (fr.width > 0 && fr.left <= cx && fr.right >= cx) {
-            const left = Math.max(r.left, fr.left);
-            const right = Math.min(r.right, fr.right);
-            if (right - left > 40) r = new DOMRect(left, r.top, right - left, r.height);
-          }
-        }
-        // Optionally overshoot the editor box by PAD px on every side. Some
-        // composers (Gemini's Quill) keep typed text near rounded corners, so a
-        // cover sized EXACTLY to the editor leaves slivers of text peeking; those
-        // providers set coverPad to bleed past the edges. A native <textarea>
-        // (DeepSeek) needs none - overshooting there just makes the cover overflow
-        // the composer, so it defaults to 0.
-        const PAD = P.coverPad || 0;
-        // Optional vertical nudge: some composers (Gemini's Quill) report an
-        // editor rect that sits a few px below the visual input box centre, so
-        // the centred "Agent is working…" text looks low. A provider can shift it.
-        const OFFY = P.coverOffsetY || 0;
-        // Height is at least MIN_H so the label is readable even over a
-        // single-line composer. CENTER the cover on the editor's vertical middle
-        // rather than anchoring its TOP to the editor top: a short (e.g. 20px)
-        // textarea bumped to 36px would otherwise grow only DOWNWARD, leaving the
-        // "Agent is working…" label sitting high in the composer's input band
-        // (seen on Cloudflare's 1-line textarea). For a composer already taller
-        // than MIN_H the maths reduces to the old `r.top - PAD`, so DeepSeek/Gemini
-        // are unchanged.
-        // Hard ceiling: even though .zs-typing caps the editor's visual height
-        // (see overlay.css), belt-and-suspenders clamp the cover so a composer
-        // whose growing element escapes that CSS cap on some provider can never
-        // turn the "Agent is working…" cover into a full-page white slab.
-        const MAXH = P.coverMaxH || 200;
-        const h = Math.min(Math.max(r.height + PAD * 2, 36), MAXH);
-        const centerY = r.top + r.height / 2 + OFFY;
-        cover.style.left = (r.left - PAD) + "px";
-        cover.style.top = (centerY - h / 2) + "px";
-        cover.style.width = (r.width + PAD * 2) + "px";
-        cover.style.height = h + "px";
-        // Composite the surface BEHIND the cover target so the fill matches what
-        // the user sees (a translucent composer card blends over the page).
-        cover.style.background = opaqueBg(covNode);
-        // When the cover blankets a whole composer card (coverTarget), match its
-        // corner radius so the cover's square corners don't poke past the card's
-        // rounded ones. Editor-sized covers keep the CSS default.
-        if (P.coverTarget) cover.style.borderRadius = getComputedStyle(covNode).borderRadius;
-        coverRaf = requestAnimationFrame(place);
-      };
-      place();
+      if (ed) ed.classList.remove("zs-typing");
+      cancelAnimationFrame(coverRaf);
     }
 
     function toast(msg) {
@@ -4412,5 +4098,55 @@
     }
   }, 5000);
 
-  log(`ZeroScript content script ready (provider: ${P.id})`);
+  log(`Devil-X content script ready (provider: ${P.id})`);
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === "test_provider_selector") {
+      try {
+        const type = msg.selectorType;
+        const cfg = msg.config || {};
+        let result = { ok: false, message: "" };
+
+        if (type === "discover") {
+          if (typeof ZSDetector !== "undefined") {
+            const detected = ZSDetector.discover(document, window.location.href);
+            result = { ok: true, detected };
+          } else {
+            result = { ok: false, message: "ZSDetector module not loaded" };
+          }
+        } else if (type === "test_input") {
+          const el = cfg.editor ? document.querySelector(cfg.editor) : null;
+          result = el
+            ? { ok: true, message: `Editor element found: <${el.tagName.toLowerCase()}> (visible: ${el.offsetWidth > 0})` }
+            : { ok: false, message: `Editor element not found for selector: '${cfg.editor || ""}'` };
+        } else if (type === "test_send") {
+          const el = cfg.sendBtn ? document.querySelector(cfg.sendBtn) : null;
+          result = el
+            ? { ok: true, message: `Send button found: <${el.tagName.toLowerCase()}>` }
+            : { ok: false, message: `Send button not found for selector: '${cfg.sendBtn || ""}'` };
+        } else if (type === "test_response") {
+          const items = cfg.chatItem ? document.querySelectorAll(cfg.chatItem) : [];
+          if (items.length > 0) {
+            const last = items[items.length - 1];
+            const box = cfg.box ? (last.querySelector(cfg.box) || last) : last;
+            result = { ok: true, message: `Found ${items.length} chat turns. Latest snippet: "${box.textContent.trim().slice(0, 60)}..."` };
+          } else {
+            result = { ok: false, message: `No chat items found for selector: '${cfg.chatItem || ""}'` };
+          }
+        } else if (type === "test_code") {
+          const sel = cfg.codeBlock || "pre code, pre";
+          const blocks = document.querySelectorAll(sel);
+          result = blocks.length > 0
+            ? { ok: true, message: `Found ${blocks.length} code block elements on page.` }
+            : { ok: false, message: `No code blocks found for selector: '${sel}'` };
+        }
+
+        sendResponse(result);
+      } catch (err) {
+        sendResponse({ ok: false, message: "Testing error: " + err.message });
+      }
+      return true;
+    }
+  });
 })();
+

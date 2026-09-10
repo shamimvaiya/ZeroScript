@@ -18,10 +18,19 @@ class BaseConnector(ABC):
     name: str = "Base Software Connector"
     description: str = ""
     target_software: str = "unknown"
+    implementation_status: str = "NOT IMPLEMENTED"  # "AVAILABLE" or "NOT IMPLEMENTED"
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.enabled = True
+
+    def get_status(self) -> str:
+        """Return standardized status: AVAILABLE, NOT CONNECTED, or NOT IMPLEMENTED."""
+        if self.implementation_status != "AVAILABLE":
+            return "NOT IMPLEMENTED"
+        if self.is_available():
+            return "AVAILABLE"
+        return "NOT CONNECTED"
 
     @abstractmethod
     def is_available(self) -> bool:

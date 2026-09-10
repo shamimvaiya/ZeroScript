@@ -406,7 +406,7 @@ const ZSProvider = (() => {
     if (!text || text.length <= SEND_CAP) return text;
     const omitted = text.length - SEND_MAX;
     const marker =
-      `\n\n[…ZeroScript: result truncated to fit Arena's input limit - ` +
+      `\n\n[…Devil-X: result truncated to fit Arena's input limit - ` +
       `${omitted} of ${text.length} characters omitted…]\n\n`;
     const budget = SEND_MAX - marker.length;
     const headLen = Math.floor(budget * 0.85);
@@ -612,12 +612,12 @@ const ZSProvider = (() => {
     const um = activeUnsupportedMode();
     if (um)
       return `Turn off <b>${um.label}</b> (${um.tip} in the composer) - ` +
-        `ZeroScript only works in plain chat. ${um.label} mode uses a different ` +
+        `Devil-X only works in plain chat. ${um.label} mode uses a different ` +
         `output surface and breaks the agent loop.`;
     if (isSupportedMode()) return "";
     const m = currentMode();
     const name = m ? m.charAt(0).toUpperCase() + m.slice(1) : "another mode";
-    return `Switch the mode dropdown to <b>Direct</b> - ZeroScript only works in ` +
+    return `Switch the mode dropdown to <b>Direct</b> - Devil-X only works in ` +
       `Direct mode (current: <b>${name}</b>).`;
   }
 

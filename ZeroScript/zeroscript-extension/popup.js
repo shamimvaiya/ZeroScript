@@ -1,32 +1,93 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// popup.js - ZeroScript Universal Agent Control Center Controller
+// popup.js - Devil-X Lightweight Extension Popup Controller
 
 (() => {
   "use strict";
 
-  const SUPPORTED_HOSTS = [
-    "chat.deepseek.com", "deepseek.com", "chatgpt.com", "chat.openai.com",
-    "gemini.google.com", "aistudio.google.com", "www.kimi.ai", "kimi.ai",
-    "chat.z.ai", "chat.qwen.ai", "arena.ai", "www.meta.ai", "meta.ai",
-  ];
+  const PROVIDER_NAMES = {
+    chatgpt: "ChatGPT",
+    gemini: "Gemini",
+    deepseek: "DeepSeek",
+    aistudio: "Google AI Studio",
+    claude: "Claude",
+    kimi: "Kimi",
+    glm: "GLM (Z.ai)",
+    qwen: "Qwen",
+    arena: "Arena.ai",
+    meta: "Meta AI",
+    local_ollama: "Local AI (Ollama)",
+    local_openai: "Local AI (LM Studio)",
+  };
 
-  let currentStatus = null;
-  let customProviders = [];
+  const TARGET_NAMES = {
+    roblox: "Roblox Studio",
+    vscode: "Visual Studio Code",
+    unity: "Unity Editor",
+    android_studio: "Android Studio",
+  };
 
-  // ── Tab Navigation ──────────────────────────────────────────────────────────
-  const tabBtns = document.querySelectorAll(".tab-btn");
-  const tabPanes = document.querySelectorAll(".tab-pane");
+  const TARGET_STATUSES = {
+    roblox: "AVAILABLE",
+    vscode: "AVAILABLE",
+    unity: "NOT IMPLEMENTED",
+    android_studio: "NOT IMPLEMENTED",
+  };
 
-  tabBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = btn.getAttribute("data-tab");
-      tabBtns.forEach((b) => b.classList.remove("active"));
-      tabPanes.forEach((p) => p.classList.remove("active"));
-      btn.classList.add("active");
-      const targetPane = document.getElementById(target);
-      if (targetPane) targetPane.classList.add("active");
-    });
-  });
+  let isConnected = false;
+  let hasNativeHost = false;
+  let currentConnectionState = "disconnected";
+  let activeEditingProviderId = null;
+
+  // DOM Elements
+  const bridgeDot = document.getElementById("bridge-dot");
+  const agentStatusVal = document.getElementById("agent-status-val");
+  const aiStatusVal = document.getElementById("ai-status-val");
+  const targetStatusVal = document.getElementById("target-status-val");
+  const targetImplBadge = document.getElementById("target-impl-badge");
+  const agentNotice = document.getElementById("agent-notice");
+  const targetNote = document.getElementById("target-note");
+  const btnToggleAgent = document.getElementById("btn-toggle-agent");
+  const targetSelect = document.getElementById("target-select");
+  const providerSelect = document.getElementById("provider-select");
+  const btnReconnect = document.getElementById("btn-reconnect");
+  const btnEmergencyStop = document.getElementById("btn-emergency-stop");
+  const btnToggleSettings = document.getElementById("btn-toggle-settings");
+  const settingsPanel = document.getElementById("settings-panel");
+  const settingsArrow = document.getElementById("settings-arrow");
+  const nativeHostStatus = document.getElementById("native-host-status");
+  const activeConnectorStatus = document.getElementById("active-connector-status");
+  const connectorStatusBadge = document.getElementById("connector-status-badge");
+  const mcpServerStatus = document.getElementById("mcp-server-status");
+  const studioPlaceStatus = document.getElementById("studio-place-status");
+
+  // Local AI Elements
+  const localAiUrlInput = document.getElementById("local-ai-url");
+  const localAiModelInput = document.getElementById("local-ai-model");
+  const btnTestLocalAi = document.getElementById("btn-test-local-ai");
+  const localAiStatusBadge = document.getElementById("local-ai-status-badge");
+
+  // Provider Builder Elements
+  const btnOpenProviderBuilder = document.getElementById("btn-open-provider-builder");
+  const providerBuilderModal = document.getElementById("provider-builder-modal");
+  const pbBtnClose = document.getElementById("pb-btn-close");
+  const pbUrlInput = document.getElementById("pb-url");
+  const pbBtnDiscover = document.getElementById("pb-btn-discover");
+  const pbNameInput = document.getElementById("pb-name");
+  const pbPatternInput = document.getElementById("pb-pattern");
+  const pbSelEditor = document.getElementById("pb-sel-editor");
+  const pbSelSend = document.getElementById("pb-sel-send");
+  const pbSelStop = document.getElementById("pb-sel-stop");
+  const pbSelChat = document.getElementById("pb-sel-chat");
+  const pbSelBox = document.getElementById("pb-sel-box");
+  const pbSelCode = document.getElementById("pb-sel-code");
+  const pbBtnTestInput = document.getElementById("pb-btn-test-input");
+  const pbBtnTestSend = document.getElementById("pb-btn-test-send");
+  const pbBtnTestResp = document.getElementById("pb-btn-test-resp");
+  const pbBtnTestCode = document.getElementById("pb-btn-test-code");
+  const pbTestStatus = document.getElementById("pb-test-status");
+  const pbBtnSave = document.getElementById("pb-btn-save");
+  const pbBtnCancel = document.getElementById("pb-btn-cancel");
+  const pbCustomList = document.getElementById("pb-custom-list");
 
   // Version
   try {
@@ -35,488 +96,529 @@
     if (vEl) vEl.textContent = `v${ver}`;
   } catch {}
 
-  // ── Status Rendering ────────────────────────────────────────────────────────
+  // ── Render Status ───────────────────────────────────────────────────────────
   function render(s) {
     if (!s) return;
-    currentStatus = s;
+    isConnected = !!s.connected;
+    hasNativeHost = !!s.nativeHost;
+    currentConnectionState = s.connectionState || (isConnected ? "connected" : "disconnected");
 
-    const dot = document.getElementById("bridge-dot");
-    const agentBadge = document.getElementById("agent-badge");
-    const bridgeStatus = document.getElementById("bridge-status");
-    const activeConnBadge = document.getElementById("active-connector-badge");
-    const toolsCount = document.getElementById("tools-count");
-
-    const isConnected = !!s.connected;
-    const mcpAlive = !!s.mcpAlive;
-    const toolsNum = s.tools || 0;
-
-    // Bridge Status
-    if (isConnected) {
-      dot.className = "brand-dot online";
-      bridgeStatus.className = "badge success";
-      bridgeStatus.textContent = "Connected (127.0.0.1)";
-      agentBadge.className = "badge success";
-      agentBadge.textContent = "Agent Ready";
-    } else {
-      dot.className = "brand-dot danger";
-      bridgeStatus.className = "badge danger";
-      bridgeStatus.textContent = "Offline";
-      agentBadge.className = "badge danger";
-      agentBadge.textContent = "Offline";
-    }
-
-    toolsCount.textContent = `${toolsNum} tools available`;
-
-    // Active Connector badge
-    const activeCid = (s.connectors && s.connectors.find((c) => c.is_active)?.name) || "Roblox Studio";
-    activeConnBadge.textContent = activeCid;
-
-    // Roblox Studio specifics
-    const robloxCard = document.getElementById("roblox-card");
-    const studioProc = document.getElementById("studio-proc-status");
-    const mcpServer = document.getElementById("mcp-server-status");
-    const studioPlace = document.getElementById("studio-place-status");
-
-    if (robloxCard) {
-      if (s.studioProc === true) {
-        studioProc.className = "badge success";
-        studioProc.textContent = "Running";
-      } else if (s.studioProc === false) {
-        studioProc.className = "badge danger";
-        studioProc.textContent = "Closed";
-      } else {
-        studioProc.className = "badge";
-        studioProc.textContent = "Unknown";
-      }
-
-      if (mcpAlive) {
-        mcpServer.className = "badge success";
-        mcpServer.textContent = "Active";
-      } else {
-        mcpServer.className = "badge warn";
-        mcpServer.textContent = isConnected ? "Stopped" : "Offline";
-      }
-
-      if (s.studio === true) {
-        studioPlace.className = "badge success";
-        studioPlace.textContent = "Place Loaded";
-      } else if (s.studio === false) {
-        studioPlace.className = "badge warn";
-        studioPlace.textContent = "No Place Open";
-      } else {
-        studioPlace.className = "badge";
-        studioPlace.textContent = isConnected ? "Probing…" : "Unavailable";
-      }
-    }
-
-    // Native Background Host controls
-    const btnStart = document.getElementById("btn-start-agent");
-    const btnStop = document.getElementById("btn-stop-agent");
-    const btnRestart = document.getElementById("btn-restart-agent");
-    const nativeHostStatus = document.getElementById("native-host-status");
-
-    if (s.nativeHost) {
-      if (nativeHostStatus) {
-        nativeHostStatus.className = "badge success";
-        nativeHostStatus.textContent = "Active & Registered";
-      }
-      if (isConnected) {
-        if (btnStart) btnStart.style.display = "none";
-        if (btnStop) btnStop.style.display = "inline-flex";
-        if (btnRestart) btnRestart.style.display = "inline-flex";
-      } else {
-        if (btnStart) btnStart.style.display = "inline-flex";
-        if (btnStop) btnStop.style.display = "none";
-        if (btnRestart) btnRestart.style.display = "none";
-      }
-    } else {
-      if (nativeHostStatus) {
-        nativeHostStatus.className = "badge warn";
-        nativeHostStatus.textContent = "Not Installed (Use start.bat)";
-      }
-      if (btnStart) btnStart.style.display = "none";
-      if (btnStop) btnStop.style.display = "none";
-      if (btnRestart) btnRestart.style.display = "none";
-    }
-
-    // Connectors list render
-    renderConnectors(s.connectors || []);
-
-    // Audit log render
-    if (s.recentAudit) {
-      renderAudit(s.recentAudit);
-    }
-  }
-
-  // ── Render Connectors ───────────────────────────────────────────────────────
-  function renderConnectors(conns) {
-    const listEl = document.getElementById("connectors-list");
-    if (!listEl) return;
-
-    if (!conns || !conns.length) {
-      // Fallback built-in list
-      conns = [
-        { id: "roblox", name: "Roblox Studio", description: "Luau scripts & place tree via MCP", is_active: true, available: true },
-        { id: "vscode", name: "Visual Studio Code", description: "Workspace files & command execution", is_active: false, available: false },
-        { id: "unity", name: "Unity Editor", description: "Scene objects & C# scripts", is_active: false, available: false },
-        { id: "android_studio", name: "Android Studio", description: "Gradle builds & ADB commands", is_active: false, available: false },
-      ];
-    }
-
-    listEl.innerHTML = "";
-    conns.forEach((c) => {
-      const item = document.createElement("div");
-      item.className = `connector-item ${c.is_active ? "active" : ""}`;
-      item.innerHTML = `
-        <div class="connector-info">
-          <div class="connector-name">${c.name} ${c.is_active ? '<span class="badge info" style="font-size:9px;padding:1px 4px;">ACTIVE</span>' : ""}</div>
-          <div class="connector-desc">${c.description || ""}</div>
-        </div>
-        <div>
-          <button class="btn ${c.is_active ? "btn-primary" : ""}" style="width:auto;padding:3px 8px;font-size:10px;">
-            ${c.is_active ? "Selected" : "Select"}
-          </button>
-        </div>
-      `;
-
-      item.addEventListener("click", () => {
-        if (!c.is_active) {
-          chrome.runtime.sendMessage({ type: "set_active_connector", connector_id: c.id }, () => {
-            refresh();
-          });
+    // Agent Connection States
+    switch (currentConnectionState) {
+      case "connected":
+        if (bridgeDot) bridgeDot.className = "status-dot online";
+        if (agentStatusVal) {
+          agentStatusVal.className = "status-val online";
+          agentStatusVal.textContent = "● Connected";
         }
-      });
-      listEl.appendChild(item);
-    });
+        if (btnToggleAgent) {
+          btnToggleAgent.textContent = "Stop Agent";
+          btnToggleAgent.className = "btn btn-danger";
+          btnToggleAgent.disabled = false;
+        }
+        if (agentNotice) agentNotice.style.display = "none";
+        break;
+
+      case "connecting":
+        if (bridgeDot) bridgeDot.className = "status-dot connecting";
+        if (agentStatusVal) {
+          agentStatusVal.className = "status-val connecting";
+          agentStatusVal.textContent = "● Connecting…";
+        }
+        if (btnToggleAgent) {
+          btnToggleAgent.textContent = "Connecting…";
+          btnToggleAgent.className = "btn btn-secondary";
+          btnToggleAgent.disabled = true;
+        }
+        break;
+
+      case "reconnecting":
+        if (bridgeDot) bridgeDot.className = "status-dot connecting";
+        if (agentStatusVal) {
+          agentStatusVal.className = "status-val connecting";
+          agentStatusVal.textContent = "● Reconnecting…";
+        }
+        if (btnToggleAgent) {
+          btnToggleAgent.textContent = "Reconnecting…";
+          btnToggleAgent.className = "btn btn-secondary";
+          btnToggleAgent.disabled = false;
+        }
+        break;
+
+      case "error":
+        if (bridgeDot) bridgeDot.className = "status-dot danger";
+        if (agentStatusVal) {
+          agentStatusVal.className = "status-val danger";
+          agentStatusVal.textContent = "● Connection Error";
+        }
+        if (btnToggleAgent) {
+          btnToggleAgent.textContent = "Start Agent";
+          btnToggleAgent.className = "btn btn-primary";
+          btnToggleAgent.disabled = false;
+        }
+        if (agentNotice && s.lastError) {
+          agentNotice.style.display = "block";
+          agentNotice.textContent = s.lastError;
+        }
+        break;
+
+      case "disconnected":
+      default:
+        if (bridgeDot) bridgeDot.className = "status-dot danger";
+        if (agentStatusVal) {
+          agentStatusVal.className = "status-val danger";
+          agentStatusVal.textContent = "● Disconnected";
+        }
+        if (btnToggleAgent) {
+          btnToggleAgent.textContent = "Start Agent";
+          btnToggleAgent.className = "btn btn-primary";
+          btnToggleAgent.disabled = false;
+        }
+        break;
+    }
+
+    // Active Target Connector
+    let activeCid = s.active_connector || "roblox";
+    if (s.connectors && s.connectors.length) {
+      const found = s.connectors.find((c) => c.is_active || c.id === activeCid);
+      if (found) activeCid = found.id;
+    }
+    if (targetSelect && targetSelect.value !== activeCid) {
+      targetSelect.value = activeCid;
+    }
+    if (targetStatusVal) {
+      targetStatusVal.textContent = TARGET_NAMES[activeCid] || activeCid;
+    }
+
+    // Update target implementation badge and notes
+    updateTargetBadge(activeCid, s);
+
+    // Settings details
+    if (activeConnectorStatus) {
+      activeConnectorStatus.textContent = TARGET_NAMES[activeCid] || activeCid;
+    }
+    if (connectorStatusBadge && targetImplBadge) {
+      connectorStatusBadge.textContent = targetImplBadge.textContent;
+      connectorStatusBadge.className = targetImplBadge.className;
+    }
+
+    if (nativeHostStatus) {
+      if (s.nativeHost) {
+        nativeHostStatus.className = "badge success";
+        nativeHostStatus.textContent = "Active";
+      } else {
+        nativeHostStatus.className = "badge warn";
+        nativeHostStatus.textContent = "Not Installed (start.bat)";
+      }
+    }
+
+    if (mcpServerStatus) {
+      if (s.mcpAlive) {
+        mcpServerStatus.className = "badge success";
+        mcpServerStatus.textContent = "Active";
+      } else {
+        mcpServerStatus.className = "badge danger";
+        mcpServerStatus.textContent = isConnected ? "Stopped" : "Offline";
+      }
+    }
+
+    if (studioPlaceStatus) {
+      if (s.studio === true) {
+        studioPlaceStatus.className = "badge success";
+        studioPlaceStatus.textContent = "Place Loaded";
+      } else if (s.studio === false) {
+        studioPlaceStatus.className = "badge warn";
+        studioPlaceStatus.textContent = "No Place Open";
+      } else {
+        studioPlaceStatus.className = "badge";
+        studioPlaceStatus.textContent = isConnected ? "Probing…" : "Unknown";
+      }
+    }
   }
 
-  // ── Render Audit Log ────────────────────────────────────────────────────────
-  function renderAudit(items) {
-    const listEl = document.getElementById("audit-list");
-    if (!listEl) return;
+  function updateTargetBadge(cid, s) {
+    if (!targetImplBadge) return;
 
-    if (!items || !items.length) {
-      listEl.innerHTML = '<div style="padding: 14px; text-align: center; color: var(--text-muted);">No commands recorded yet.</div>';
+    if (cid === "roblox" || cid === "vscode") {
+      targetImplBadge.className = "badge success";
+      targetImplBadge.textContent = "AVAILABLE";
+
+      if (targetNote) {
+        if (cid === "vscode") {
+          targetNote.style.display = "block";
+          targetNote.textContent = "VS Code connector active: Safe workspace file reading, editing, and restricted terminal command execution.";
+        } else {
+          targetNote.style.display = "none";
+        }
+      }
+    } else {
+      targetImplBadge.className = "badge warn";
+      targetImplBadge.textContent = "NOT IMPLEMENTED";
+      if (targetNote) {
+        targetNote.style.display = "block";
+        targetNote.textContent = `${TARGET_NAMES[cid] || cid} connector is NOT IMPLEMENTED yet. Roblox Studio and Visual Studio Code are the working connectors.`;
+      }
+    }
+  }
+
+  // ── Detect AI site on active browser tab ─────────────────────────────────────
+  function checkActiveTab() {
+    if (!aiStatusVal) return;
+    if (!chrome.tabs || !chrome.tabs.query) {
+      aiStatusVal.textContent = "ChatGPT";
       return;
     }
-
-    listEl.innerHTML = "";
-    items.forEach((item) => {
-      const row = document.createElement("div");
-      row.className = "audit-item";
-      const isOk = item.ok !== false;
-      const statusBadge = isOk
-        ? `<span class="badge success">${item.durationMs ? item.durationMs + "ms" : "OK"}</span>`
-        : `<span class="badge danger">${item.error || "FAIL"}</span>`;
-
-      row.innerHTML = `
-        <div>
-          <div class="audit-tool">${item.tool || "command"}</div>
-          <div style="color:var(--text-muted);font-size:9.5px;">${item.timeStr || new Date(item.timestamp || Date.now()).toLocaleTimeString()}</div>
-        </div>
-        <div class="audit-status">${statusBadge}</div>
-      `;
-      listEl.appendChild(row);
-    });
-  }
-
-  // ── Check Active Tab for AI site detection ──────────────────────────────────
-  function checkActiveTab() {
-    const aiBadge = document.getElementById("detected-ai-badge");
-    if (!aiBadge) return;
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (!tabs || !tabs.length || !tabs[0].url) {
-        aiBadge.textContent = "No AI tab open";
-        aiBadge.className = "badge";
+        aiStatusVal.textContent = "No AI tab open";
         return;
       }
       const url = tabs[0].url.toLowerCase();
-      let matchedName = null;
+      let matchedKey = null;
 
-      if (url.includes("deepseek.com")) matchedName = "DeepSeek";
-      else if (url.includes("chatgpt.com") || url.includes("chat.openai.com")) matchedName = "ChatGPT";
-      else if (url.includes("gemini.google.com")) matchedName = "Gemini";
-      else if (url.includes("aistudio.google.com")) matchedName = "Google AI Studio";
-      else if (url.includes("kimi.ai")) matchedName = "Kimi";
-      else if (url.includes("chat.z.ai")) matchedName = "GLM (Z.ai)";
-      else if (url.includes("chat.qwen.ai")) matchedName = "Qwen";
-      else if (url.includes("arena.ai")) matchedName = "Arena AI";
-      else if (url.includes("meta.ai")) matchedName = "Meta AI";
+      if (url.includes("deepseek.com")) matchedKey = "deepseek";
+      else if (url.includes("chatgpt.com") || url.includes("chat.openai.com")) matchedKey = "chatgpt";
+      else if (url.includes("gemini.google.com")) matchedKey = "gemini";
+      else if (url.includes("aistudio.google.com")) matchedKey = "aistudio";
+      else if (url.includes("claude.ai")) matchedKey = "claude";
+      else if (url.includes("kimi.ai")) matchedKey = "kimi";
+      else if (url.includes("chat.z.ai")) matchedKey = "glm";
+      else if (url.includes("chat.qwen.ai")) matchedKey = "qwen";
+      else if (url.includes("arena.ai")) matchedKey = "arena";
+      else if (url.includes("meta.ai")) matchedKey = "meta";
 
-      // Also check custom providers
-      if (!matchedName && customProviders.length) {
-        for (const cp of customProviders) {
-          if (cp.enabled && cp.urlPattern && url.includes(cp.urlPattern.replace(/\/\*.*$/, "").replace(/^https?:\/\//, ""))) {
-            matchedName = cp.name;
-            break;
-          }
-        }
-      }
-
-      if (matchedName) {
-        aiBadge.textContent = matchedName;
-        aiBadge.className = "badge info";
+      if (matchedKey) {
+        aiStatusVal.textContent = PROVIDER_NAMES[matchedKey];
+        if (providerSelect) providerSelect.value = matchedKey;
       } else {
-        aiBadge.textContent = "Non-AI page";
-        aiBadge.className = "badge";
+        const selVal = providerSelect ? providerSelect.value : "chatgpt";
+        aiStatusVal.textContent = `${PROVIDER_NAMES[selVal] || selVal} (Target)`;
+      }
+
+      // Pre-fill Provider Builder URL input if tab active
+      if (pbUrlInput && !pbUrlInput.value && tabs[0].url.startsWith("http")) {
+        pbUrlInput.value = tabs[0].url;
       }
     });
   }
 
-  // ── Refresh & Polling ───────────────────────────────────────────────────────
-  function refresh() {
-    chrome.runtime.sendMessage({ type: "status" }, (s) => {
-      if (s) render(s);
-    });
-    chrome.runtime.sendMessage({ type: "get_audit_log" }, (res) => {
-      if (res && res.auditLog) renderAudit(res.auditLog);
-    });
-    checkActiveTab();
-  }
-
-  // ── Button Event Listeners ──────────────────────────────────────────────────
-  document.getElementById("btn-reconnect")?.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "reconnect" }, () => setTimeout(refresh, 500));
-  });
-
-  document.getElementById("btn-emergency-stop")?.addEventListener("click", () => {
-    const btn = document.getElementById("btn-emergency-stop");
-    if (btn) btn.textContent = "Stopping…";
-    chrome.runtime.sendMessage({ type: "emergency_stop_all" }, () => {
-      setTimeout(() => {
-        if (btn) btn.textContent = "🛑 Stop All";
-        refresh();
-      }, 500);
-    });
-  });
-
-  document.getElementById("btn-start-agent")?.addEventListener("click", () => {
-    const btn = document.getElementById("btn-start-agent");
-    if (btn) btn.textContent = "Starting Bridge…";
-    chrome.runtime.sendMessage({ type: "start_agent" }, () => {
-      setTimeout(refresh, 1800);
-    });
-  });
-
-  document.getElementById("btn-stop-agent")?.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "stop_agent" }, () => {
-      setTimeout(refresh, 800);
-    });
-  });
-
-  document.getElementById("btn-restart-agent")?.addEventListener("click", () => {
-    const btn = document.getElementById("btn-restart-agent");
-    if (btn) btn.textContent = "Restarting…";
-    chrome.runtime.sendMessage({ type: "restart_agent" }, () => {
-      setTimeout(refresh, 2200);
-    });
-  });
-
-  document.getElementById("btn-clear-audit")?.addEventListener("click", () => {
-    renderAudit([]);
-  });
-
-  // ── Phase 4: Provider Builder UI ───────────────────────────────────────────
-  const builderPanel = document.getElementById("builder-panel");
-  const btnShowBuilder = document.getElementById("btn-show-builder");
-  const btnCancelBuilder = document.getElementById("btn-cancel-builder");
-  const btnRunDiscovery = document.getElementById("btn-run-discovery");
-  const builderSelectors = document.getElementById("builder-selectors");
-  const builderUrlInput = document.getElementById("builder-url");
-  const btnTestProvider = document.getElementById("btn-test-provider");
-  const btnSaveProvider = document.getElementById("btn-save-provider");
-  const testRes = document.getElementById("builder-test-res");
-
-  btnShowBuilder?.addEventListener("click", () => {
-    builderPanel.style.display = "block";
-    builderSelectors.style.display = "none";
-    if (testRes) testRes.textContent = "";
-
-    // Pre-fill with active tab URL if available
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs[0] && tabs[0].url && tabs[0].url.startsWith("http")) {
-        builderUrlInput.value = tabs[0].url;
-      }
-    });
-  });
-
-  btnCancelBuilder?.addEventListener("click", () => {
-    builderPanel.style.display = "none";
-  });
-
-  // Load Custom Providers from Storage
+  // ── Custom Provider List Rendering ──────────────────────────────────────────
   function loadCustomProviders() {
-    chrome.storage.local.get(["custom_providers"], (res) => {
-      customProviders = res.custom_providers || [];
-      renderCustomProviders();
+    chrome.runtime.sendMessage({ type: "get_custom_providers" }, (res) => {
+      if (!res || !res.providers) return;
+      renderCustomProvidersList(res.providers);
+      updateProviderSelectDropdown(res.providers);
     });
   }
 
-  function renderCustomProviders() {
-    const listEl = document.getElementById("custom-providers-list");
-    if (!listEl) return;
-    listEl.innerHTML = "";
+  function renderCustomProvidersList(providers) {
+    if (!pbCustomList) return;
+    pbCustomList.innerHTML = "";
 
-    if (!customProviders.length) {
-      listEl.innerHTML = '<div style="color:var(--text-muted);padding:8px 0;font-size:11px;">No custom AI websites added yet.</div>';
+    if (!providers || !providers.length) {
+      pbCustomList.innerHTML = '<div style="font-size:10px; color:#888;">No custom AI websites saved yet.</div>';
       return;
     }
 
-    customProviders.forEach((cp, idx) => {
-      const item = document.createElement("div");
-      item.className = "custom-provider-item";
-      item.innerHTML = `
+    providers.forEach((p) => {
+      const div = document.createElement("div");
+      div.className = "custom-provider-item";
+      div.innerHTML = `
         <div>
-          <div style="font-weight:500;">${cp.name}</div>
-          <div style="color:var(--text-muted);font-size:10px;">${cp.urlPattern}</div>
+          <strong>${p.name || p.id}</strong>
+          <div style="font-size:9px; color:#aaa;">${p.urlPattern || ""}</div>
         </div>
-        <div style="display:flex;gap:4px;">
-          <button class="btn btn-danger" style="width:auto;padding:2px 6px;font-size:10px;" data-del="${idx}">Delete</button>
+        <div class="cp-actions">
+          <button class="btn btn-sm btn-secondary cp-btn-edit" data-id="${p.id}">Edit</button>
+          <button class="btn btn-sm btn-danger cp-btn-del" data-id="${p.id}">Delete</button>
         </div>
       `;
-      item.querySelector(`[data-del="${idx}"]`)?.addEventListener("click", () => {
-        customProviders.splice(idx, 1);
-        chrome.storage.local.set({ custom_providers: customProviders }, () => {
-          renderCustomProviders();
-        });
-      });
-      listEl.appendChild(item);
+      pbCustomList.appendChild(div);
+    });
+
+    pbCustomList.querySelectorAll(".cp-btn-edit").forEach((btn) => {
+      btn.addEventListener("click", () => editCustomProvider(btn.dataset.id, providers));
+    });
+
+    pbCustomList.querySelectorAll(".cp-btn-del").forEach((btn) => {
+      btn.addEventListener("click", () => deleteCustomProvider(btn.dataset.id));
     });
   }
 
-  btnRunDiscovery?.addEventListener("click", () => {
-    const url = (builderUrlInput.value || "").trim();
-    if (!url) {
-      alert("Please enter a valid website URL");
-      return;
+  function updateProviderSelectDropdown(customProviders) {
+    if (!providerSelect) return;
+    // Remove old custom options
+    Array.from(providerSelect.options).forEach((opt) => {
+      if (opt.value.startsWith("custom_")) providerSelect.remove(opt.index);
+    });
+
+    if (customProviders && customProviders.length) {
+      customProviders.forEach((p) => {
+        if (p.enabled !== false) {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = `${p.name || p.id} (Custom AI)`;
+          providerSelect.appendChild(opt);
+          PROVIDER_NAMES[p.id] = p.name || p.id;
+        }
+      });
+    }
+  }
+
+  function editCustomProvider(id, providers) {
+    const p = providers.find((x) => x.id === id);
+    if (!p) return;
+    activeEditingProviderId = id;
+    if (pbNameInput) pbNameInput.value = p.name || "";
+    if (pbPatternInput) pbPatternInput.value = p.urlPattern || "";
+    if (pbSelEditor) pbSelEditor.value = p.selectors?.editor || "";
+    if (pbSelSend) pbSelSend.value = p.selectors?.sendBtn || "";
+    if (pbSelStop) pbSelStop.value = p.selectors?.stopBtn || "";
+    if (pbSelChat) pbSelChat.value = p.selectors?.chatItem || "";
+    if (pbSelBox) pbSelBox.value = p.selectors?.box || "";
+    if (pbSelCode) pbSelCode.value = p.selectors?.codeBlock || "";
+    if (pbTestStatus) pbTestStatus.textContent = `Editing provider '${p.name}'. Review selectors and save.`;
+  }
+
+  function deleteCustomProvider(id) {
+    chrome.runtime.sendMessage({ type: "delete_custom_provider", id }, () => {
+      loadCustomProviders();
+    });
+  }
+
+  // ── Provider Selector Test Helpers ──────────────────────────────────────────
+  function getPBConfig() {
+    return {
+      editor: pbSelEditor?.value || "",
+      sendBtn: pbSelSend?.value || "",
+      stopBtn: pbSelStop?.value || "",
+      chatItem: pbSelChat?.value || "",
+      box: pbSelBox?.value || "",
+      codeBlock: pbSelCode?.value || "",
+    };
+  }
+
+  function runPBTest(selectorType) {
+    if (pbTestStatus) pbTestStatus.textContent = `Testing '${selectorType}' on active tab…`;
+    chrome.runtime.sendMessage(
+      { type: "test_provider_selector", selectorType, config: getPBConfig() },
+      (res) => {
+        if (pbTestStatus) {
+          if (res && res.ok) {
+            pbTestStatus.textContent = `✓ [PASS] ${res.message}`;
+            pbTestStatus.style.color = "#34d399";
+          } else {
+            pbTestStatus.textContent = `✗ [FAIL] ${res ? res.message || res.error : "No response"}`;
+            pbTestStatus.style.color = "#f87171";
+          }
+        }
+      }
+    );
+  }
+
+  // ── Refresh ─────────────────────────────────────────────────────────────────
+  function refresh() {
+    if (chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ type: "status" }, (s) => {
+        if (s) render(s);
+      });
+    }
+    checkActiveTab();
+    loadCustomProviders();
+  }
+
+  // ── Event Handlers ──────────────────────────────────────────────────────────
+
+  // Start / Stop Agent Toggle
+  btnToggleAgent?.addEventListener("click", () => {
+    if (isConnected) {
+      btnToggleAgent.textContent = "Stopping…";
+      btnToggleAgent.disabled = true;
+      chrome.runtime.sendMessage({ type: "stop_agent" }, () => {
+        setTimeout(refresh, 800);
+      });
+    } else {
+      btnToggleAgent.textContent = "Starting Bridge…";
+      btnToggleAgent.disabled = true;
+      chrome.runtime.sendMessage({ type: "start_agent" }, (resp) => {
+        if (resp && resp.ok === false) {
+          if (agentNotice) {
+            agentNotice.style.display = "block";
+            agentNotice.textContent = resp.error || "Please run start.bat on your PC to launch Devil-X.";
+          }
+        }
+        setTimeout(refresh, 1500);
+      });
+    }
+  });
+
+  // Target Software Selector
+  targetSelect?.addEventListener("change", (e) => {
+    const targetId = e.target.value;
+    if (targetStatusVal) targetStatusVal.textContent = TARGET_NAMES[targetId] || targetId;
+    updateTargetBadge(targetId, { connected: isConnected });
+    chrome.runtime.sendMessage({ type: "set_active_connector", connector_id: targetId }, () => {
+      refresh();
+    });
+  });
+
+  // AI Provider Selector
+  providerSelect?.addEventListener("change", (e) => {
+    const provId = e.target.value;
+    if (aiStatusVal) aiStatusVal.textContent = PROVIDER_NAMES[provId] || provId;
+  });
+
+  // Reconnect Button
+  btnReconnect?.addEventListener("click", () => {
+    btnReconnect.textContent = "Connecting…";
+    btnReconnect.disabled = true;
+    chrome.runtime.sendMessage({ type: "reconnect" }, () => {
+      setTimeout(() => {
+        btnReconnect.textContent = "↻ Reconnect";
+        btnReconnect.disabled = false;
+        refresh();
+      }, 700);
+    });
+  });
+
+  // Emergency Stop All
+  btnEmergencyStop?.addEventListener("click", () => {
+    btnEmergencyStop.textContent = "Stopping…";
+    btnEmergencyStop.disabled = true;
+    chrome.runtime.sendMessage({ type: "emergency_stop_all" }, () => {
+      btnEmergencyStop.textContent = "🛑 Halted!";
+      setTimeout(() => {
+        btnEmergencyStop.textContent = "🛑 Stop All";
+        btnEmergencyStop.disabled = false;
+        refresh();
+      }, 1000);
+    });
+  });
+
+  // Toggle Settings Panel
+  btnToggleSettings?.addEventListener("click", () => {
+    const isOpen = settingsPanel.style.display !== "none";
+    settingsPanel.style.display = isOpen ? "none" : "flex";
+    settingsArrow.textContent = isOpen ? "▾" : "▴";
+  });
+
+  // Test Local AI Endpoint
+  btnTestLocalAi?.addEventListener("click", () => {
+    const provider = providerSelect?.value.includes("openai") ? "openai_compatible" : "ollama";
+    const base_url = localAiUrlInput?.value.trim() || (provider === "ollama" ? "http://127.0.0.1:11434" : "http://127.0.0.1:1234/v1");
+    const model = localAiModelInput?.value.trim() || "";
+
+    if (localAiStatusBadge) {
+      localAiStatusBadge.className = "badge warn";
+      localAiStatusBadge.textContent = "Testing…";
     }
 
-    btnRunDiscovery.textContent = "Analyzing…";
-
-    // Attempt to analyze active tab DOM
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const activeTab = tabs && tabs[0];
-      if (activeTab && activeTab.url && activeTab.url.includes(new URL(url).hostname)) {
-        // Execute discovery script on tab
-        chrome.scripting.executeScript(
-          {
-            target: { tabId: activeTab.id },
-            func: () => {
-              if (typeof ZSDetector !== "undefined") {
-                return ZSDetector.discover(document, window.location.href);
-              }
-              return null;
-            },
-          },
-          (results) => {
-            btnRunDiscovery.textContent = "🔍 Discover Selectors";
-            const res = results && results[0] && results[0].result;
-            populateBuilderForm(res, url);
-          }
-        );
-      } else {
-        // Tab not open; generate standard semantic template
-        btnRunDiscovery.textContent = "🔍 Discover Selectors";
-        populateBuilderForm(null, url);
+    chrome.runtime.sendMessage({ type: "check_local_ai", provider, base_url, model }, (res) => {
+      if (localAiStatusBadge) {
+        if (res && res.ok) {
+          const count = res.models ? res.models.length : 0;
+          localAiStatusBadge.className = "badge success";
+          localAiStatusBadge.textContent = `Online (${count} model${count === 1 ? "" : "s"})`;
+        } else {
+          localAiStatusBadge.className = "badge danger";
+          localAiStatusBadge.textContent = "Offline (Check URL)";
+        }
       }
     });
   });
 
-  function populateBuilderForm(discovery, url) {
-    builderSelectors.style.display = "block";
-    let hostname = "Custom AI";
-    try { hostname = new URL(url).hostname.replace(/^www\./, ""); } catch {}
+  // Open Provider Builder
+  btnOpenProviderBuilder?.addEventListener("click", () => {
+    if (providerBuilderModal) providerBuilderModal.style.display = "flex";
+    activeEditingProviderId = null;
+    loadCustomProviders();
+  });
 
-    document.getElementById("sel-name").value = (discovery && discovery.name) || hostname;
-    document.getElementById("sel-editor").value = (discovery && discovery.selectors && discovery.selectors.editor) || "textarea, [contenteditable='true']";
-    document.getElementById("sel-send").value = (discovery && discovery.selectors && discovery.selectors.sendBtn) || "button[type='submit'], button[aria-label*='Send' i]";
-    document.getElementById("sel-stop").value = (discovery && discovery.selectors && discovery.selectors.stopBtn) || "button[aria-label*='Stop' i]";
-    document.getElementById("sel-turn").value = (discovery && discovery.selectors && discovery.selectors.chatItem) || "[role='article'], .message, .chat-message";
+  // Close Provider Builder Modal
+  pbBtnClose?.addEventListener("click", () => {
+    if (providerBuilderModal) providerBuilderModal.style.display = "none";
+  });
+  pbBtnCancel?.addEventListener("click", () => {
+    if (providerBuilderModal) providerBuilderModal.style.display = "none";
+  });
 
-    if (testRes) testRes.innerHTML = `<span style="color:#34d399;">✓ Selectors auto-generated. Test them on the live page or adjust below.</span>`;
+  // Auto-Discover Elements on Active Tab
+  pbBtnDiscover?.addEventListener("click", () => {
+    if (pbTestStatus) pbTestStatus.textContent = "Auto-detecting elements on active tab…";
+    chrome.runtime.sendMessage({ type: "test_provider_selector", selectorType: "discover" }, (res) => {
+      if (res && res.ok && res.detected) {
+        const d = res.detected;
+        if (pbSelEditor && d.editor) pbSelEditor.value = d.editor;
+        if (pbSelSend && d.sendBtn) pbSelSend.value = d.sendBtn;
+        if (pbSelStop && d.stopBtn) pbSelStop.value = d.stopBtn;
+        if (pbSelChat && d.chatItem) pbSelChat.value = d.chatItem;
+        if (pbSelBox && d.box) pbSelBox.value = d.box;
+        if (pbSelCode && d.codeBlock) pbSelCode.value = d.codeBlock;
+
+        if (pbNameInput && !pbNameInput.value && pbUrlInput && pbUrlInput.value) {
+          try {
+            const host = new URL(pbUrlInput.value).hostname.replace("www.", "");
+            pbNameInput.value = host.charAt(0).toUpperCase() + host.slice(1);
+            pbPatternInput.value = `https://${host}/*`;
+          } catch {}
+        }
+
+        if (pbTestStatus) {
+          pbTestStatus.textContent = "✓ Auto-discovery complete! Review and test the detected selectors below.";
+          pbTestStatus.style.color = "#34d399";
+        }
+      } else {
+        if (pbTestStatus) {
+          pbTestStatus.textContent = `✗ Auto-discovery failed: ${res ? res.error || res.message : "No tab response"}`;
+          pbTestStatus.style.color = "#f87171";
+        }
+      }
+    });
+  });
+
+  // Test Buttons
+  pbBtnTestInput?.addEventListener("click", () => runPBTest("test_input"));
+  pbBtnTestSend?.addEventListener("click", () => runPBTest("test_send"));
+  pbBtnTestResp?.addEventListener("click", () => runPBTest("test_response"));
+  pbBtnTestCode?.addEventListener("click", () => runPBTest("test_code"));
+
+  // Save Provider
+  pbBtnSave?.addEventListener("click", () => {
+    const name = pbNameInput?.value.trim() || "Custom AI";
+    const urlPattern = pbPatternInput?.value.trim() || "*://*/*";
+    const id = activeEditingProviderId || "custom_" + Date.now();
+
+    const providerObj = {
+      id,
+      name,
+      urlPattern,
+      enabled: true,
+      selectors: getPBConfig(),
+    };
+
+    chrome.runtime.sendMessage({ type: "save_custom_provider", provider: providerObj }, (res) => {
+      if (res && res.ok) {
+        if (pbTestStatus) {
+          pbTestStatus.textContent = `✓ Saved custom provider '${name}' successfully!`;
+          pbTestStatus.style.color = "#34d399";
+        }
+        loadCustomProviders();
+        setTimeout(() => {
+          if (providerBuilderModal) providerBuilderModal.style.display = "none";
+        }, 800);
+      }
+    });
+  });
+
+  // Listen for broadcast status updates
+  if (chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg && msg.type === "zs-status") render(msg);
+    });
   }
 
-  btnTestProvider?.addEventListener("click", () => {
-    const config = {
-      selectors: {
-        editor: document.getElementById("sel-editor").value.trim(),
-        sendBtn: document.getElementById("sel-send").value.trim(),
-        stopBtn: document.getElementById("sel-stop").value.trim(),
-        chatItem: document.getElementById("sel-turn").value.trim(),
-      },
-    };
-
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const activeTab = tabs && tabs[0];
-      if (!activeTab) return;
-
-      chrome.scripting.executeScript(
-        {
-          target: { tabId: activeTab.id },
-          func: (cfg) => {
-            const checks = {
-              editor: !!document.querySelector(cfg.selectors.editor),
-              sendBtn: !!document.querySelector(cfg.selectors.sendBtn),
-              chatItem: !!document.querySelector(cfg.selectors.chatItem),
-            };
-            return checks;
-          },
-          args: [config],
-        },
-        (results) => {
-          const checks = results && results[0] && results[0].result;
-          if (checks) {
-            const ed = checks.editor ? "✓ Input Found" : "✗ Input Not Found";
-            const btn = checks.sendBtn ? "✓ Send Btn Found" : "✗ Send Btn Missing";
-            const turn = checks.chatItem ? "✓ Messages Found" : "✗ Messages Missing";
-            testRes.innerHTML = `<span style="color:#e8e8ec;">Test: ${ed} | ${btn} | ${turn}</span>`;
-          } else {
-            testRes.innerHTML = `<span style="color:#fbbf24;">Ensure the target AI site tab is active to run live tests.</span>`;
-          }
-        }
-      );
-    });
-  });
-
-  btnSaveProvider?.addEventListener("click", () => {
-    const name = document.getElementById("sel-name").value.trim() || "Custom AI";
-    const url = builderUrlInput.value.trim();
-    let pattern = "*://*/*";
-    try {
-      const u = new URL(url);
-      pattern = `${u.protocol}//${u.hostname}/*`;
-    } catch {}
-
-    const newProvider = {
-      id: "custom_" + Date.now().toString(36),
-      name,
-      urlPattern: pattern,
-      enabled: true,
-      selectors: {
-        editor: document.getElementById("sel-editor").value.trim(),
-        sendBtn: document.getElementById("sel-send").value.trim(),
-        stopBtn: document.getElementById("sel-stop").value.trim(),
-        chatItem: document.getElementById("sel-turn").value.trim(),
-        box: ".markdown, .prose",
-      },
-      createdAt: Date.now(),
-    };
-
-    customProviders.push(newProvider);
-    chrome.storage.local.set({ custom_providers: customProviders }, () => {
-      builderPanel.style.display = "none";
-      renderCustomProviders();
-      alert(`AI Website '${name}' saved and enabled!`);
-    });
-  });
-
-  // Init
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg && msg.type === "zs-status") render(msg);
-  });
-
-  loadCustomProviders();
+  // Initial load & periodic refresh
   refresh();
   setInterval(refresh, 2500);
 })();

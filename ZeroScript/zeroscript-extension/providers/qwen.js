@@ -633,7 +633,7 @@ const ZSProvider = (() => {
     if (!text || text.length <= SEND_CAP) return text;
     const omitted = text.length - SEND_MAX;
     const marker =
-      `\n\n[…ZeroScript: result truncated to fit Qwen's ${SEND_CAP}-character input ` +
+      `\n\n[…Devil-X: result truncated to fit Qwen's ${SEND_CAP}-character input ` +
       `limit - ${omitted} of ${text.length} characters omitted. Do NOT re-run the ` +
       `command; work with the head and tail shown here…]\n\n`;
     const budget = SEND_MAX - marker.length;

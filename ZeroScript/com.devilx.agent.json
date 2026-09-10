@@ -1,0 +1,9 @@
+{
+  "name": "com.devilx.agent",
+  "description": "Devil-X Universal Local Agent Host",
+  "path": "native_host.bat",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://*/*"
+  ]
+}

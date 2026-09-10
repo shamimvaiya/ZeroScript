@@ -2,213 +2,248 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>ZeroScript Universal Control Center</title>
+  <title>Devil-X</title>
   <link rel="stylesheet" href="popup.css" />
+  <script>
+    (function() {
+      try {
+        let _fetch = window.fetch;
+        Object.defineProperty(window, 'fetch', {
+          get: function() { return _fetch; },
+          set: function(fn) { _fetch = fn; },
+          configurable: true,
+          enumerable: true
+        });
+      } catch (e) {
+        try {
+          let _fetch = window.fetch;
+          Object.defineProperty(Window.prototype, 'fetch', {
+            get: function() { return _fetch; },
+            set: function(fn) { _fetch = fn; },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e2) {}
+      }
+
+      window.addEventListener('error', function(event) {
+        if (event && event.message && event.message.includes('fetch')) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return true;
+        }
+      }, true);
+    })();
+  </script>
 </head>
 <body>
-  <div class="container">
+  <div class="popup-container">
     <!-- Header -->
     <div class="header">
       <div class="brand">
-        <div id="bridge-dot" class="brand-dot"></div>
-        <span>ZeroScript Universal</span>
+        <span class="brand-logo">DX</span>
+        <div>
+          <div class="brand-title">Devil-X</div>
+          <div class="brand-subtitle">Universal AI-to-Software Control Platform</div>
+        </div>
       </div>
-      <span id="version" class="version-badge">v1.5.3</span>
+      <div class="header-indicator">
+        <span id="bridge-dot" class="status-dot danger" title="Agent Connection Status"></span>
+        <span id="version" class="version-tag">v1.5.3</span>
+      </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="tab-overview">Overview</button>
-      <button class="tab-btn" data-tab="tab-connectors">Connectors</button>
-      <button class="tab-btn" data-tab="tab-activity">Activity</button>
-      <button class="tab-btn" data-tab="tab-providers">AI Sites</button>
-      <button class="tab-btn" data-tab="tab-settings">Settings</button>
+    <!-- Status Overview -->
+    <div class="status-box">
+      <div class="status-row">
+        <span class="status-label">Agent:</span>
+        <span id="agent-status-val" class="status-val danger">● Disconnected</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">AI:</span>
+        <span id="ai-status-val" class="status-val">Detecting active tab…</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Target:</span>
+        <div class="target-status-group">
+          <span id="target-status-val" class="status-val">Roblox Studio</span>
+          <span id="target-impl-badge" class="badge success">AVAILABLE</span>
+        </div>
+      </div>
+      <div id="agent-notice" class="agent-notice" style="display: none;"></div>
     </div>
 
-    <!-- Tab 1: Overview -->
-    <div id="tab-overview" class="tab-pane active">
-      <div class="card">
-        <div class="card-title">
-          <span>Agent & Runtime Status</span>
-          <span id="agent-badge" class="badge">Offline</span>
-        </div>
-        <div class="status-row">
-          <span>Local Bridge (127.0.0.1)</span>
-          <span id="bridge-status" class="badge danger">Disconnected</span>
-        </div>
-        <div class="status-row">
-          <span>Active Connector</span>
-          <span id="active-connector-badge" class="badge info">Roblox Studio</span>
-        </div>
-        <div class="status-row">
-          <span>AI Site (Active Tab)</span>
-          <span id="detected-ai-badge" class="badge">Checking…</span>
-        </div>
-        <div class="status-row">
-          <span>Available Tools</span>
-          <span id="tools-count" class="badge">0 tools</span>
-        </div>
+    <!-- Main Agent Controls -->
+    <div class="control-section">
+      <!-- Start / Stop Agent Button -->
+      <button id="btn-toggle-agent" class="btn btn-primary">
+        Start Agent
+      </button>
+
+      <!-- Target Software Selector -->
+      <div class="select-group">
+        <label for="target-select" class="control-label">Target Software</label>
+        <select id="target-select" class="select-control">
+          <option value="visual_studio">Microsoft Visual Studio (C# / C++) [AVAILABLE]</option>
+          <option value="vscode">Visual Studio Code [AVAILABLE]</option>
+          <option value="unity">Unity Editor [AVAILABLE]</option>
+          <option value="android_studio">Android Studio [AVAILABLE]</option>
+          <option value="roblox">Roblox Studio [AVAILABLE]</option>
+        </select>
+        <div id="target-note" class="target-note" style="display: none;"></div>
       </div>
 
-      <div class="card" id="roblox-card">
-        <div class="card-title">Roblox Studio Integration</div>
-        <div class="status-row">
-          <span>Studio Process</span>
-          <span id="studio-proc-status" class="badge">Closed</span>
-        </div>
-        <div class="status-row">
-          <span>MCP Server Link</span>
-          <span id="mcp-server-status" class="badge">Down</span>
-        </div>
-        <div class="status-row">
-          <span>Active Place Loaded</span>
-          <span id="studio-place-status" class="badge">No Place Open</span>
-        </div>
+      <!-- AI Provider Selector -->
+      <div class="select-group">
+        <label for="provider-select" class="control-label">AI Provider</label>
+        <select id="provider-select" class="select-control">
+          <option value="chatgpt">ChatGPT (chatgpt.com)</option>
+          <option value="gemini">Gemini (gemini.google.com)</option>
+          <option value="deepseek">DeepSeek (chat.deepseek.com)</option>
+          <option value="aistudio">Google AI Studio</option>
+          <option value="claude">Claude (claude.ai)</option>
+          <option value="kimi">Kimi (kimi.ai)</option>
+          <option value="glm">GLM / Z.ai (chat.z.ai)</option>
+          <option value="qwen">Qwen (chat.qwen.ai)</option>
+          <option value="arena">Arena.ai</option>
+          <option value="meta">Meta AI (meta.ai)</option>
+          <option value="local_ollama">Local AI (Ollama - 11434)</option>
+          <option value="local_openai">Local AI (LM Studio - 1234)</option>
+        </select>
+        <button id="btn-open-provider-builder" class="btn btn-secondary" style="margin-top: 6px; padding: 5px 8px; font-size: 11px;">+ Add AI Website</button>
       </div>
 
-      <!-- Quick Action Controls -->
-      <div id="native-controls" style="margin-bottom: 8px;">
-        <button id="btn-start-agent" class="btn btn-success" style="display:none; margin-bottom: 6px;">
-          ⚡ Start Background Agent
+      <!-- Quick Action Buttons -->
+      <div class="action-row">
+        <button id="btn-reconnect" class="btn btn-secondary">
+          ↻ Reconnect
         </button>
-        <div class="btn-group">
-          <button id="btn-restart-agent" class="btn" style="display:none;">⟳ Restart Agent</button>
-          <button id="btn-stop-agent" class="btn btn-danger" style="display:none;">■ Stop Agent</button>
-        </div>
-      </div>
-
-      <div class="btn-group">
-        <button id="btn-reconnect" class="btn">↻ Reconnect Bridge</button>
         <button id="btn-emergency-stop" class="btn btn-danger" title="Emergency halt all AI turns immediately">
           🛑 Stop All
         </button>
       </div>
     </div>
 
-    <!-- Tab 2: Software Connectors -->
-    <div id="tab-connectors" class="tab-pane">
-      <div class="card-title" style="margin-bottom: 6px;">Target Software Connectors</div>
-      <div id="connectors-list">
-        <!-- Rendered dynamically by popup.js -->
-      </div>
-      <p style="color: var(--text-muted); font-size: 11px; margin-top: 10px;">
-        Click any connector to switch target software. Tools will be routed accordingly without restarting.
-      </p>
-    </div>
+    <!-- Collapsible Settings -->
+    <div class="settings-section">
+      <button id="btn-toggle-settings" class="settings-toggle">
+        <span>Settings</span>
+        <span id="settings-arrow">▾</span>
+      </button>
 
-    <!-- Tab 3: Activity & Audit Log -->
-    <div id="tab-activity" class="tab-pane">
-      <div class="card-title" style="margin-bottom: 8px;">
-        <span>Recent Commands & Audit</span>
-        <button id="btn-clear-audit" class="btn" style="width: auto; padding: 2px 8px; font-size: 10px;">Clear</button>
-      </div>
-      <div id="audit-list" class="card audit-list" style="padding: 0;">
-        <div style="padding: 14px; text-align: center; color: var(--text-muted);">No commands recorded yet.</div>
-      </div>
-    </div>
-
-    <!-- Tab 4: AI Providers & Builder -->
-    <div id="tab-providers" class="tab-pane">
-      <div class="card-title" style="margin-bottom: 8px;">
-        <span>AI Website Adapters</span>
-        <button id="btn-show-builder" class="btn btn-primary" style="width: auto; padding: 3px 8px; font-size: 10px;">
-          + Add AI Website
-        </button>
-      </div>
-
-      <!-- Provider Builder Sub-panel (hidden by default) -->
-      <div id="builder-panel" class="card" style="display: none; border-color: var(--accent);">
-        <div class="card-title" style="color: #a5b4fc;">Automatic Provider Builder</div>
-        <div class="form-group">
-          <label class="form-label">AI Website URL</label>
-          <input id="builder-url" class="form-input" placeholder="https://chat.example.com" />
+      <div id="settings-panel" class="settings-panel" style="display: none;">
+        <div class="setting-item">
+          <span>Bridge Endpoint:</span>
+          <code>127.0.0.1:17613</code>
         </div>
-        <div class="btn-group">
-          <button id="btn-run-discovery" class="btn btn-primary">🔍 Discover Selectors</button>
-          <button id="btn-cancel-builder" class="btn">Cancel</button>
-        </div>
-
-        <div id="builder-selectors" style="display: none; margin-top: 10px;">
-          <div class="form-group">
-            <label class="form-label">Provider Name</label>
-            <input id="sel-name" class="form-input" placeholder="e.g. My AI" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Chat Input Selector</label>
-            <input id="sel-editor" class="form-input" placeholder="textarea, [contenteditable]" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Send Button Selector</label>
-            <input id="sel-send" class="form-input" placeholder="button[type=submit]" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Stop Button Selector</label>
-            <input id="sel-stop" class="form-input" placeholder="button[aria-label=Stop]" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Message Turn Selector</label>
-            <input id="sel-turn" class="form-input" placeholder=".message, [role=article]" />
-          </div>
-
-          <div class="btn-group">
-            <button id="btn-test-provider" class="btn">🧪 Test Selectors</button>
-            <button id="btn-save-provider" class="btn btn-success">💾 Save & Activate</button>
-          </div>
-          <div id="builder-test-res" style="margin-top: 6px; font-size: 11px;"></div>
-        </div>
-      </div>
-
-      <!-- Custom Providers List -->
-      <div id="custom-providers-list">
-        <!-- Rendered dynamically -->
-      </div>
-
-      <!-- Built-in Providers -->
-      <div class="card" style="margin-top: 10px;">
-        <div class="card-title">Built-in Providers (9)</div>
-        <p style="color: var(--text-muted); font-size: 11px;">
-          DeepSeek, ChatGPT, Gemini, Google AI Studio, Kimi, GLM (Z.ai), Qwen, Arena.ai, Meta AI.
-        </p>
-      </div>
-    </div>
-
-    <!-- Tab 5: Settings -->
-    <div id="tab-settings" class="tab-pane">
-      <div class="card">
-        <div class="card-title">Bridge Configuration</div>
-        <div class="status-row">
-          <span>Port</span>
-          <span class="badge">17613</span>
-        </div>
-        <div class="status-row">
-          <span>Host</span>
-          <span class="badge">127.0.0.1</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Native Background Agent</div>
-        <div class="status-row">
-          <span>Chrome Native Host</span>
+        <div class="setting-item">
+          <span>Native Background Host:</span>
           <span id="native-host-status" class="badge">Checking…</span>
         </div>
-        <p style="color: var(--text-muted); font-size: 11px; margin-top: 6px;">
-          To run the bridge quietly in the background without terminal windows, run <code>register_native_host.bat</code> once.
-        </p>
-      </div>
+        <div class="setting-item">
+          <span>Active Connector:</span>
+          <span id="active-connector-status" class="badge">Roblox Studio</span>
+        </div>
+        <div class="setting-item">
+          <span>Connector Status:</span>
+          <span id="connector-status-badge" class="badge success">AVAILABLE</span>
+        </div>
+        <div class="setting-item">
+          <span>Roblox MCP Link:</span>
+          <span id="mcp-server-status" class="badge">Offline</span>
+        </div>
+        <div class="setting-item">
+          <span>Studio Place Loaded:</span>
+          <span id="studio-place-status" class="badge">Unknown</span>
+        </div>
 
-      <div class="card">
-        <div class="card-title">Fallback Launcher</div>
-        <p style="color: var(--text-muted); font-size: 11px;">
-          You can always run <code>start.bat</code> in the project directory for live terminal debugging.
-        </p>
+        <div class="setting-item" style="margin-top: 6px; font-weight: 600; color: #fff; border-top: 1px solid var(--border); padding-top: 6px;">
+          <span>Local AI Settings</span>
+        </div>
+        <div class="setting-item">
+          <span>Endpoint:</span>
+          <input id="local-ai-url" type="text" value="http://127.0.0.1:11434" class="input-control-sm" style="width: 140px; padding: 2px 4px; font-size: 10px; background: #22252e; border: 1px solid #444; color: #fff; border-radius: 4px;" />
+        </div>
+        <div class="setting-item">
+          <span>Model:</span>
+          <input id="local-ai-model" type="text" value="qwen2.5-coder:7b" class="input-control-sm" style="width: 140px; padding: 2px 4px; font-size: 10px; background: #22252e; border: 1px solid #444; color: #fff; border-radius: 4px;" />
+        </div>
+        <div class="setting-item" style="margin-top: 4px;">
+          <button id="btn-test-local-ai" class="btn btn-secondary" style="padding: 3px 8px; font-size: 10px;">Test Endpoint</button>
+          <span id="local-ai-status-badge" class="badge">Not Checked</span>
+        </div>
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="footer">
-      <span id="footer-status">Ready</span>
-      <a href="https://ko-fi.com/sebattfg" target="_blank">♥ Tip on Ko-fi</a>
+    <!-- Provider Builder Modal -->
+    <div id="provider-builder-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">Provider Builder</span>
+          <button id="pb-btn-close" class="btn-close">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="pb-row">
+            <label class="pb-label">AI Website URL</label>
+            <input id="pb-url" type="url" placeholder="https://my-ai-site.com" class="input-control" />
+          </div>
+          <button id="pb-btn-discover" class="btn btn-secondary" style="margin-bottom: 8px;">🔍 Auto-Discover Page Elements</button>
+
+          <div class="pb-fields">
+            <div class="pb-row">
+              <label class="pb-label">Provider Name</label>
+              <input id="pb-name" type="text" placeholder="My Custom AI" class="input-control" />
+            </div>
+            <div class="pb-row">
+              <label class="pb-label">URL Pattern</label>
+              <input id="pb-pattern" type="text" placeholder="https://my-ai-site.com/*" class="input-control" />
+            </div>
+            <div class="pb-row">
+              <label class="pb-label">Editor / Composer Selector</label>
+              <input id="pb-sel-editor" type="text" placeholder="textarea, [contenteditable='true']" class="input-control" />
+            </div>
+            <div class="pb-row">
+              <label class="pb-label">Send Button Selector</label>
+              <input id="pb-sel-send" type="text" placeholder="button[type='submit'], button[aria-label*='Send']" class="input-control" />
+            </div>
+            <div class="pb-row">
+              <label class="pb-label">Stop Button Selector</label>
+              <input id="pb-sel-stop" type="text" placeholder="button[aria-label*='Stop']" class="input-control" />
+            </div>
+            <div class="pb-row">
+              <label class="pb-label">Chat Turn Selector</label>
+              <input id="pb-sel-chat" type="text" placeholder=".message-item, [role='article']" class="input-control" />
+            </div>
+            <div class="pb-row">
+              <label class="pb-label">Text Container Selector</label>
+              <input id="pb-sel-box" type="text" placeholder=".message-text, .markdown" class="input-control" />
+            </div>
+            <div class="pb-row">
+              <label class="pb-label">Code Block Selector</label>
+              <input id="pb-sel-code" type="text" placeholder="pre code, pre" class="input-control" />
+            </div>
+          </div>
+
+          <div class="pb-tests">
+            <span class="pb-tests-title">Element Test Suite:</span>
+            <div class="pb-test-btns">
+              <button id="pb-btn-test-input" class="btn btn-secondary btn-sm">Test Input</button>
+              <button id="pb-btn-test-send" class="btn btn-secondary btn-sm">Test Send</button>
+              <button id="pb-btn-test-resp" class="btn btn-secondary btn-sm">Test Resp</button>
+              <button id="pb-btn-test-code" class="btn btn-secondary btn-sm">Test Code</button>
+            </div>
+            <div id="pb-test-status" class="test-status-box">Ready to test active tab</div>
+          </div>
+
+          <div class="pb-actions">
+            <button id="pb-btn-save" class="btn btn-primary">Save Provider</button>
+            <button id="pb-btn-cancel" class="btn btn-secondary">Cancel</button>
+          </div>
+
+          <div class="pb-custom-list-header">Saved Custom Providers</div>
+          <div id="pb-custom-list" class="pb-custom-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 

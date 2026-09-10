@@ -1,0 +1,6 @@
+{
+  "name": "Devil-X",
+  "description": "Universal AI-to-Software Control Platform",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

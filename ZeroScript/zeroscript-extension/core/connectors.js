@@ -14,6 +14,8 @@ const ZSConnectors = (() => {
     name: "Roblox Studio",
     description: "Controls Roblox Studio place, Luau scripts, and game tree via MCP",
     targetSoftware: "RobloxStudio",
+    implementation_status: "AVAILABLE",
+    defaultStatus: "AVAILABLE",
     toolCategory: (name) => {
       const n = (name || "").includes("/") ? name.split("/").pop() : (name || "");
       if (n === "list_commands" || n === "list_tools") return "read";
@@ -34,6 +36,8 @@ const ZSConnectors = (() => {
     name: "Visual Studio Code",
     description: "Inspects workspace files, edits code, and executes terminal commands",
     targetSoftware: "VSCode",
+    implementation_status: "AVAILABLE",
+    defaultStatus: "AVAILABLE",
     toolCategory: (name) => {
       const n = (name || "").includes("/") ? name.split("/").pop() : (name || "");
       if (/read|search|grep|list/i.test(n)) return "read";
@@ -49,6 +53,8 @@ const ZSConnectors = (() => {
     name: "Unity Editor",
     description: "Inspects scenes, edits C# scripts, and interacts with GameObjects",
     targetSoftware: "Unity",
+    implementation_status: "NOT IMPLEMENTED",
+    defaultStatus: "NOT IMPLEMENTED",
     toolCategory: (name) => {
       const n = (name || "").includes("/") ? name.split("/").pop() : (name || "");
       if (/read|inspect|find|search/i.test(n)) return "read";
@@ -63,6 +69,8 @@ const ZSConnectors = (() => {
     name: "Android Studio",
     description: "Builds Android apps, runs Gradle tasks, and controls ADB devices",
     targetSoftware: "AndroidStudio",
+    implementation_status: "NOT IMPLEMENTED",
+    defaultStatus: "NOT IMPLEMENTED",
     toolCategory: (name) => {
       const n = (name || "").includes("/") ? name.split("/").pop() : (name || "");
       if (/logcat|read|status/i.test(n)) return "read";
@@ -115,6 +123,22 @@ const ZSConnectors = (() => {
     return "tool";
   }
 
+  function getStatus(id, bridgeStatus) {
+    const conn = connectors.get(id);
+    if (!conn) return "NOT IMPLEMENTED";
+    if (conn.implementation_status === "NOT IMPLEMENTED") {
+      return "NOT IMPLEMENTED";
+    }
+    if (id === "roblox") {
+      if (!bridgeStatus || !bridgeStatus.connected) return "NOT CONNECTED";
+      if (bridgeStatus.mcpAlive || bridgeStatus.studio === true || bridgeStatus.studioApp === true) {
+        return "AVAILABLE";
+      }
+      return "NOT CONNECTED";
+    }
+    return conn.defaultStatus || "NOT IMPLEMENTED";
+  }
+
   return {
     register,
     get,
@@ -122,6 +146,7 @@ const ZSConnectors = (() => {
     getActive,
     setActive,
     categorizeTool,
+    getStatus,
   };
 })();
 

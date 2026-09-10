@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ZeroScript Free \u00d7 Roblox Studio Agent",
+  "name": "Devil-X",
   "version": "1.5.3",
-  "description": "Turn ChatGPT, DeepSeek, Gemini, Kimi, GLM, Qwen, Arena or Meta AI into a Roblox Studio agent that drives Studio through a local bridge.",
+  "description": "Universal AI-to-Software Control Platform",
   "permissions": [
     "storage",
     "nativeMessaging",
@@ -36,7 +36,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ZeroScript Free",
+    "default_title": "Devil-X",
     "default_icon": {
       "16": "icon.png",
       "48": "icon.png",

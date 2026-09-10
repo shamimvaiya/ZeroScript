@@ -38,11 +38,24 @@ except Exception:
 try:
     from connectors import registry as connector_registry
     from connectors.roblox import RobloxStudioConnector
+    from connectors.visual_studio import VisualStudioConnector
     from connectors.vscode import VSCodeConnector
     from connectors.unity import UnityConnector
     from connectors.android_studio import AndroidStudioConnector
 except Exception:
     connector_registry = None
+
+try:
+    from process_manager import process_mgr
+except Exception:
+    process_mgr = None
+
+try:
+    from local_ai.ollama import OllamaProvider
+    from local_ai.openai_compatible import OpenAICompatibleProvider
+except Exception:
+    OllamaProvider = None
+    OpenAICompatibleProvider = None
 
 try:
     import websockets
@@ -482,9 +495,9 @@ def _reclaim_bridge_port():
     cmdline = _process_cmdline(pid_i)
     if "bridge.py" not in cmdline.lower():
         log(f"port {PORT} is held by pid {pid_i} ('{name}') but it does not look "
-            f"like a ZeroScript bridge - leaving it alone.", "yl")
+            f"like a Devil-X bridge - leaving it alone.", "yl")
         return False
-    log(f"port {PORT} is held by a leftover ZeroScript bridge (pid {pid_i}) from a "
+    log(f"port {PORT} is held by a leftover Devil-X bridge (pid {pid_i}) from a "
         "previous session - killing it so this one can start.", "yl")
     try:
         subprocess.run(["taskkill", "/F", "/PID", str(pid_i)],
@@ -1341,6 +1354,8 @@ async def broadcast_status():
     try:
         _st = await asyncio.to_thread(probe_studio)
         _proc = await asyncio.to_thread(_roblox_studio_app_running)
+        conns = connector_registry.list_connectors() if connector_registry else []
+        active_c = connector_registry.active_id if connector_registry else "roblox"
         payload = json.dumps({
             "type": "connected",
             "mcp_alive": mgr.any_alive(),
@@ -1351,6 +1366,8 @@ async def broadcast_status():
             "studio_proc": _proc,
             "servers": mgr.health(),
             "tools": mgr.list_tools(),
+            "connectors": conns,
+            "active_connector": active_c,
             "port": PORT,
         })
     except Exception:
@@ -1369,6 +1386,7 @@ async def handler(ws):
     try:
         _st = await asyncio.to_thread(probe_studio)
         conns = connector_registry.list_connectors() if connector_registry else []
+        active_c = connector_registry.active_id if connector_registry else "roblox"
         await ws.send(json.dumps({
             "type": "connected",
             "mcp_alive": mgr.any_alive(),
@@ -1377,6 +1395,7 @@ async def handler(ws):
             "servers": mgr.health(),
             "tools": mgr.list_tools(),
             "connectors": conns,
+            "active_connector": active_c,
             "port": PORT,
         }))
         async for raw in ws:
@@ -1392,9 +1411,11 @@ async def handler(ws):
 
             elif mtype == "list_connectors":
                 conns = connector_registry.list_connectors() if connector_registry else []
+                active_c = connector_registry.active_id if connector_registry else "roblox"
                 await ws.send(json.dumps({
                     "type": "connectors", "id": rid, "ok": True,
                     "connectors": conns,
+                    "active_connector": active_c,
                 }))
 
             elif mtype == "set_active_connector":
@@ -1407,6 +1428,105 @@ async def handler(ws):
                     "type": "connector_changed", "id": rid, "ok": ok,
                     "active": connector_registry.active_id if connector_registry else None,
                 }))
+                if ok:
+                    await broadcast_status()
+
+            elif mtype == "check_local_ai":
+                provider_type = msg.get("provider", "ollama")
+                base_url = msg.get("base_url") or ("http://127.0.0.1:11434" if provider_type == "ollama" else "http://127.0.0.1:1234/v1")
+                model = msg.get("model", "")
+                
+                if OllamaProvider and provider_type == "ollama":
+                    provider = OllamaProvider(base_url=base_url, model=model)
+                elif OpenAICompatibleProvider:
+                    provider = OpenAICompatibleProvider(base_url=base_url, model=model)
+                else:
+                    provider = None
+
+                if provider:
+                    avail = await provider.is_available()
+                    models = await provider.list_models() if avail else []
+                else:
+                    avail = False
+                    models = []
+
+                await ws.send(json.dumps({
+                    "type": "local_ai_status", "id": rid, "ok": avail,
+                    "provider": provider_type, "base_url": base_url, "models": models
+                }))
+
+            elif mtype == "chat_local_ai":
+                provider_type = msg.get("provider", "ollama")
+                base_url = msg.get("base_url") or ("http://127.0.0.1:11434" if provider_type == "ollama" else "http://127.0.0.1:1234/v1")
+                model = msg.get("model", "")
+                messages = msg.get("messages", [])
+                system_prompt = msg.get("system_prompt")
+
+                if OllamaProvider and provider_type == "ollama":
+                    provider = OllamaProvider(base_url=base_url, model=model or "qwen2.5-coder:7b")
+                elif OpenAICompatibleProvider:
+                    provider = OpenAICompatibleProvider(base_url=base_url, model=model or "local-model")
+                else:
+                    provider = None
+
+                if provider:
+                    chunks = []
+                    async for chunk in provider.chat(messages=messages, system_prompt=system_prompt):
+                        chunks.append(chunk)
+                    reply = "".join(chunks)
+                    await ws.send(json.dumps({
+                        "type": "local_ai_response", "id": rid, "ok": True, "text": reply
+                    }))
+                else:
+                    await ws.send(json.dumps({
+                        "type": "local_ai_response", "id": rid, "ok": False, "error": "Local AI provider module unavailable"
+                    }))
+
+            elif mtype == "list_processes":
+                procs = process_mgr.list_processes() if process_mgr else {"ok": False, "error": "ProcessManager not loaded"}
+                await ws.send(json.dumps({
+                    "type": "processes_list", "id": rid, **procs
+                }))
+
+            elif mtype == "lock_source":
+                source = msg.get("source") or {}
+                res = process_mgr.lock_source(source) if process_mgr else {"ok": False}
+                await ws.send(json.dumps({
+                    "type": "source_locked", "id": rid, **res
+                }))
+
+            elif mtype == "unlock_source":
+                res = process_mgr.unlock_source() if process_mgr else {"ok": False}
+                await ws.send(json.dumps({
+                    "type": "source_unlocked", "id": rid, **res
+                }))
+
+            elif mtype == "lock_target":
+                target = msg.get("target") or {}
+                res = process_mgr.lock_target(target) if process_mgr else {"ok": False}
+                # Also synchronize active connector if specified
+                if connector_registry and target.get("connector_id"):
+                    connector_registry.active_id = target.get("connector_id")
+                await ws.send(json.dumps({
+                    "type": "target_locked", "id": rid, **res
+                }))
+
+            elif mtype == "unlock_target":
+                res = process_mgr.unlock_target() if process_mgr else {"ok": False}
+                await ws.send(json.dumps({
+                    "type": "target_unlocked", "id": rid, **res
+                }))
+
+            elif mtype == "get_topology":
+                topo = process_mgr.get_topology() if process_mgr else {}
+                await ws.send(json.dumps({
+                    "type": "topology_status", "id": rid, "ok": True, "topology": topo
+                }))
+
+            elif mtype in ("stop_bridge", "shutdown"):
+                log("received stop/shutdown command from client", "yl")
+                await ws.send(json.dumps({"type": "stopping", "id": rid, "ok": True}))
+                asyncio.get_running_loop().call_later(0.3, lambda: os._exit(0))
 
             elif mtype == "studio_status":
                 studio = await asyncio.to_thread(probe_studio)
@@ -1836,7 +1956,7 @@ async def _supervised(name, coro_factory):
 
 
 async def main():
-    print(f"\n{C['cy']}  ZeroScript Bridge v{BRIDGE_VERSION}{C['reset']}  {C['dim']}- Roblox Studio - ws://{HOST}:{PORT}{C['reset']}\n")
+    print(f"\n{C['cy']}  Devil-X Bridge v{BRIDGE_VERSION}{C['reset']}  {C['dim']}- Roblox Studio - ws://{HOST}:{PORT}{C['reset']}\n")
     log(f"===== BRIDGE START  v{BRIDGE_VERSION}  pid={os.getpid()}  log={LOG_PATH} =====", "cy")
     await asyncio.to_thread(_kill_orphan_studio_mcp)
     killed_squatter = await asyncio.to_thread(check_studio_port)

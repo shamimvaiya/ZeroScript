@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Devil-X - Universal 3-Tier Master Controller</title>
+  <meta name="description" content="Universal AI-to-Software Control Platform & 3-Tier Master Hub" />
+  <meta property="og:title" content="Devil-X - Universal 3-Tier Master Controller" />
+  <meta property="og:description" content="Universal AI-to-Software Control Platform & 3-Tier Master Hub" />
+  <link rel="icon" type="image/png" href="/extension/icon.png" />
+  <style>
+    :root {
+      --bg-canvas: #090b10;
+      --bg-panel: #11141d;
+      --bg-card: #171b26;
+      --bg-card-hover: #1e2433;
+      --bg-inner: #0d1017;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.4);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --cyan: #06b6d4;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 16px 40px;
+      line-height: 1.5;
+    }
+
+    /* Top Navigation */
+    .top-header {
+      width: 100%;
+      max-width: 1240px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .brand-info h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge.success {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--success);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .badge.warning {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .badge.danger {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .badge.cyan {
+      background: rgba(6, 182, 212, 0.12);
+      color: var(--cyan);
+      border-color: rgba(6, 182, 212, 0.3);
+    }
+
+    /* Main Container */
+    .main-layout {
+      width: 100%;
+      max-width: 1240px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Connection Banner */
+    .conn-banner {
+      background: #111522;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .conn-banner.connected {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .conn-banner.disconnected {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    /* 3-Tier Visual Flow Diagram */
+    .topology-container {
+      display: grid;
+      grid-template-columns: 1fr 36px 1.2fr 36px 1fr;
+      align-items: stretch;
+      gap: 0;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px 18px;
+      position: relative;
+    }
+
+    @media (max-width: 960px) {
+      .topology-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .link-connector {
+        transform: rotate(90deg);
+        height: 28px;
+      }
+    }
+
+    .tier-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .tier-card.active-hub {
+      border-color: var(--border-accent);
+      box-shadow: 0 0 24px rgba(99, 102, 241, 0.15);
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, var(--bg-card) 100%);
+    }
+
+    .tier-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .tier-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tier-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+
+    .tier-badge.hub {
+      background: #4f46e5;
+      color: #fff;
+    }
+
+    .link-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .pulse-arrow {
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.4; transform: scale(0.95); }
+      50% { opacity: 1; transform: scale(1.1); color: #818cf8; }
+    }
+
+    /* Process Table & Selector */
+    .proc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+      background: var(--bg-inner);
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .proc-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .proc-item:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .proc-item.selected {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .proc-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .proc-name {
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
+    }
+
+    .proc-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
+    }
+
+    .proc-meta {
+      text-align: right;
+      font-size: 11px;
+      font-family: monospace;
+      color: #94a3b8;
+    }
+
+    .locked-card {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .locked-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .locked-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Hub Controls */
+    .hub-status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-box {
+      background: var(--bg-inner);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+
+    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text-main); border-color: var(--border); }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.14); }
+
+    .btn-success { background: #059669; color: #fff; }
+    .btn-success:hover { background: #047857; }
+
+    .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+    /* Lower Section: Tabs & Tools Inspector */
+    .lower-section {
+      display: grid;
+      grid-template-columns: 1.8fr 1.2fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 960px) {
+      .lower-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Tools Catalog */
+    .tool-chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tool-chip {
+      background: var(--bg-inner);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 5px 8px;
+      font-size: 11px;
+      font-family: monospace;
+      color: #93c5fd;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .tool-chip:hover {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--accent);
+    }
+
+    .tool-chip .tag {
+      font-size: 9px;
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    /* Logs view */
+    .log-box {
+      background: #05070a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #a7f3d0;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    .log-line { display: block; }
+    .log-line.warn { color: #fde047; }
+    .log-line.info { color: #93c5fd; }
+    .log-line.success { color: #34d399; }
+    .log-line.err { color: #f87171; }
+
+    /* Quick Guide Box */
+    .guide-box {
+      background: rgba(99, 102, 241, 0.05);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+    .guide-box strong { color: #fff; }
+    .guide-box code {
+      background: #0b0e14;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #93c5fd;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="top-header">
+    <div class="brand-group">
+      <div class="brand-logo">DX</div>
+      <div class="brand-info">
+        <h1>Devil-X Universal Master Controller <span class="badge cyan">3-Tier Master Hub</span></h1>
+        <p>Live OS Process & Tab Locking Engine for AI-to-Software Control</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="hub-badge" class="badge warning">○ Checking Local Bridge (ws://127.0.0.1:17613)...</span>
+      <button id="btn-reconnect-ws" class="btn btn-secondary btn-sm">🔄 Connect Bridge</button>
+      <button id="btn-toggle-server" class="btn btn-danger btn-sm">Stop Server</button>
+    </div>
+  </header>
+
+  <!-- Main 3-Tier Flow Layout -->
+  <main class="main-layout">
+
+    <!-- Live Connection Status Banner -->
+    <div class="conn-banner disconnected" id="conn-banner">
+      <div>
+        <strong id="conn-title">Local Bridge Status:</strong>
+        <span id="conn-detail" style="color: var(--text-muted); margin-left: 6px;">
+          Listening for live WebSocket on <code>ws://127.0.0.1:17613</code>.
+        </span>
+      </div>
+      <div>
+        <button id="btn-guide-toggle" class="btn btn-primary btn-sm">📖 Real PC Setup Guide</button>
+      </div>
+    </div>
+
+    <!-- Instructions Banner (Collapsible) -->
+    <div class="guide-box" id="guide-box">
+      <h3 style="color: #818cf8; margin-bottom: 8px; font-size: 13px;">💻 How to Run on Your Real Computer (Windows/Mac/Linux):</h3>
+      <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
+        <li><strong>Start Local Bridge:</strong> Inside the <code>/ZeroScript/</code> folder on your PC, double-click <code>start.bat</code> or run <code>python bridge.py</code>. (Or run <code>launch_desktop_hub.bat</code> for Native Tkinter GUI).</li>
+        <li><strong>Load Extension:</strong> In Chrome/Edge, go to <code>chrome://extensions</code> -> Enable Developer mode -> "Load unpacked" -> Select <code>ZeroScript/zeroscript-extension</code>.</li>
+        <li><strong>Lock & Execute:</strong> Select your active AI Tab (Step 1) and your IDE like Visual Studio (Step 3) below. The Bridge will automatically coordinate and execute AI tools on your real software!</li>
+      </ol>
+    </div>
+
+    <!-- 3-Tier Visualization Grid -->
+    <section class="topology-container">
+
+      <!-- STEP 1: Web Browser / AI Source Process -->
+      <div class="tier-card" id="tier-source">
+        <div class="tier-header">
+          <span class="tier-title">🌐 Step 1: AI Source Tab</span>
+          <span class="tier-badge">Input Hook</span>
+        </div>
+
+        <div class="locked-card" id="source-locked-status">
+          <div class="locked-title">🔒 LOCKED SOURCE PROCESS</div>
+          <div class="locked-val" id="source-name-display">Google Chrome (AI Studio)</div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="source-pid-display">PID: 10420 • Tab: Google AI Studio</div>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-top: 4px;">Select Running Browser / Process:</div>
+        
+        <div class="proc-list" id="source-proc-list">
+          <div class="proc-item selected" data-pid="10420" data-name="Google Chrome" data-title="Google AI Studio - Google Chrome">
+            <div class="proc-info">
+              <span class="proc-name">chrome.exe</span>
+              <span class="proc-sub">Google AI Studio - Google Chrome</span>
+            </div>
+            <div class="proc-meta">PID: 10420<br>142 MB</div>
+          </div>
+          <div class="proc-item" data-pid="8912" data-name="Microsoft Edge" data-title="ChatGPT - Microsoft Edge">
+            <div class="proc-info">
+              <span class="proc-name">msedge.exe</span>
+              <span class="proc-sub">ChatGPT - Microsoft Edge</span>
+            </div>
+            <div class="proc-meta">PID: 8912<br>98 MB</div>
+          </div>
+          <div class="proc-item" data-pid="11200" data-name="Mozilla Firefox" data-title="Claude.ai - Mozilla Firefox">
+            <div class="proc-info">
+              <span class="proc-name">firefox.exe</span>
+              <span class="proc-sub">Claude.ai - Mozilla Firefox</span>
+            </div>
+            <div class="proc-meta">PID: 11200<br>115 MB</div>
+          </div>
+          <div class="proc-item" data-pid="14050" data-name="Brave Browser" data-title="DeepSeek Chat - Brave">
+            <div class="proc-info">
+              <span class="proc-name">brave.exe</span>
+              <span class="proc-sub">DeepSeek Chat - Brave</span>
+            </div>
+            <div class="proc-meta">PID: 14050<br>102 MB</div>
+          </div>
+        </div>
+
+        <button id="btn-lock-source" class="btn btn-primary btn-sm">🔒 Lock Selected Tab Process</button>
+      </div>
+
+      <!-- Connector Line 1 -->
+      <div class="link-connector">
+        <span class="pulse-arrow">⇄</span>
+      </div>
+
+      <!-- STEP 2: MY SOFTWARE Master Hub (Central Native Controller) -->
+      <div class="tier-card active-hub" id="tier-hub">
+        <div class="tier-header">
+          <span class="tier-title">⚙️ Step 2: "MY SOFTWARE"</span>
+          <span class="tier-badge hub">Master Controller</span>
+        </div>
+
+        <div class="hub-status-grid">
+          <div class="stat-box">
+            <span class="stat-label">Bridge WebSocket</span>
+            <span class="stat-val" style="color: var(--success);" id="hub-ws-val">ws://127.0.0.1:17613</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Execution Mode</span>
+            <span class="stat-val" style="color: var(--cyan);" id="hub-mode-val">Native Background Process</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Active Connector</span>
+            <span class="stat-val" id="hub-active-conn">Visual Studio (C# / C++)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Safety Sandbox</span>
+            <span class="stat-val" style="color: var(--success);">Active (0 Blocks)</span>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-inner); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 11px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-weight: 600; color: #cbd5e1;">Live Master Coordinator:</div>
+          <div style="color: var(--text-muted); line-height: 1.4;">
+            Receives AI function calls from <strong>Step 1</strong>, checks process PID lock, and sends commands into <strong>Step 3 (Target Software)</strong> via native MCP.
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: auto;">
+          <button id="btn-rescan-processes" class="btn btn-secondary btn-sm" style="flex: 1;">🔄 Scan OS Procs</button>
+          <button id="btn-emergency-stop" class="btn btn-danger btn-sm" style="flex: 1;">🛑 Emergency Halt</button>
+        </div>
+      </div>
+
+      <!-- Connector Line 2 -->
+      <div class="link-connector">
+        <span class="pulse-arrow">⇄</span>
+      </div>
+
+      <!-- STEP 3: Target Software / IDE / MCP Tools -->
+      <div class="tier-card" id="tier-target">
+        <div class="tier-header">
+          <span class="tier-title">🛠️ Step 3: Target Software</span>
+          <span class="tier-badge">Tools / MCP</span>
+        </div>
+
+        <div class="locked-card" id="target-locked-status">
+          <div class="locked-title">🔒 LOCKED TARGET IDE</div>
+          <div class="locked-val" id="target-name-display">Microsoft Visual Studio (C# / C++)</div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="target-pid-display">PID: 15420 • devenv.exe</div>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-top: 4px;">Select Running Target Software / IDE:</div>
+
+        <div class="proc-list" id="target-proc-list">
+          <div class="proc-item selected" data-pid="15420" data-cid="visual_studio" data-name="Microsoft Visual Studio (C# / C++)" data-title="MyUniversalSolution.sln - Microsoft Visual Studio 2022">
+            <div class="proc-info">
+              <span class="proc-name">devenv.exe</span>
+              <span class="proc-sub">Visual Studio (C# / C++ IDE)</span>
+            </div>
+            <div class="proc-meta">PID: 15420<br>420 MB</div>
+          </div>
+          <div class="proc-item" data-pid="12040" data-cid="vscode" data-name="Visual Studio Code" data-title="ZeroScript - Visual Studio Code">
+            <div class="proc-info">
+              <span class="proc-name">Code.exe</span>
+              <span class="proc-sub">Visual Studio Code</span>
+            </div>
+            <div class="proc-meta">PID: 12040<br>210 MB</div>
+          </div>
+          <div class="proc-item" data-pid="16400" data-cid="unity" data-name="Unity Editor" data-title="Unity 2022.3.14f1 - MainScene">
+            <div class="proc-info">
+              <span class="proc-name">Unity.exe</span>
+              <span class="proc-sub">Unity Editor Engine</span>
+            </div>
+            <div class="proc-meta">PID: 16400<br>850 MB</div>
+          </div>
+          <div class="proc-item" data-pid="18200" data-cid="android_studio" data-name="Android Studio" data-title="Android Studio - MobileWorkspace">
+            <div class="proc-info">
+              <span class="proc-name">studio64.exe</span>
+              <span class="proc-sub">Android Studio IDE</span>
+            </div>
+            <div class="proc-meta">PID: 18200<br>760 MB</div>
+          </div>
+          <div class="proc-item" data-pid="7344" data-cid="roblox" data-name="Roblox Studio" data-title="Roblox Studio - Baseplate">
+            <div class="proc-info">
+              <span class="proc-name">RobloxStudioBeta.exe</span>
+              <span class="proc-sub">Roblox Studio MCP</span>
+            </div>
+            <div class="proc-meta">PID: 7344<br>310 MB</div>
+          </div>
+        </div>
+
+        <button id="btn-lock-target" class="btn btn-primary btn-sm">🔒 Lock Target Software</button>
+      </div>
+
+    </section>
+
+    <!-- Lower Section: Live Tools Catalog & Event Logs -->
+    <section class="lower-section">
+
+      <!-- Tools Capabilities for Active Target -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <span class="panel-title">🧰 Active Software MCP Tools (<span id="active-tool-count">7</span> Available)</span>
+          <span class="badge success" id="tools-connector-badge">Microsoft Visual Studio</span>
+        </div>
+
+        <div class="tool-chip-list" id="tool-chip-container">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <button id="btn-test-build" class="btn btn-secondary btn-sm">⚡ Run Build / Compile</button>
+          <button id="btn-test-diag" class="btn btn-secondary btn-sm">🔍 Check Compiler Errors</button>
+          <button id="btn-test-info" class="btn btn-secondary btn-sm">📋 Inspect Project Info</button>
+        </div>
+      </div>
+
+      <!-- Live Stream Logs -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <span class="panel-title">📜 Master Hub Real-Time Activity Log</span>
+          <span class="badge cyan" id="log-status-badge">Live Stream</span>
+        </div>
+
+        <div class="log-box" id="hub-log-box">
+          <div class="log-line info">[INIT] Devil-X Master Hub ready.</div>
+          <div class="log-line success">[TOPOLOGY] Step 1 locked: Google Chrome (PID 10420)</div>
+          <div class="log-line success">[TOPOLOGY] Step 3 locked: Microsoft Visual Studio C#/C++ (PID 15420)</div>
+          <div class="log-line">[SYSTEM] Ready for AI Agent prompts and automated execution.</div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    (function () {
+      let isServerRunning = true;
+      let ws = null;
+      let isWsConnected = false;
+      let reqIdCounter = 1;
+
+      let selectedSource = { pid: 10420, name: 'Google Chrome', title: 'Google AI Studio - Google Chrome' };
+      let selectedTarget = { pid: 15420, cid: 'visual_studio', name: 'Microsoft Visual Studio (C# / C++)', title: 'MyUniversalSolution.sln - Microsoft Visual Studio 2022' };
+
+      const btnToggleServer = document.getElementById('btn-toggle-server');
+      const btnReconnectWs = document.getElementById('btn-reconnect-ws');
+      const hubBadge = document.getElementById('hub-badge');
+      const hubWsVal = document.getElementById('hub-ws-val');
+      const hubLogBox = document.getElementById('hub-log-box');
+      const connBanner = document.getElementById('conn-banner');
+      const connTitle = document.getElementById('conn-title');
+      const connDetail = document.getElementById('conn-detail');
+      const btnGuideToggle = document.getElementById('btn-guide-toggle');
+      const guideBox = document.getElementById('guide-box');
+
+      const sourceProcList = document.getElementById('source-proc-list');
+      const targetProcList = document.getElementById('target-proc-list');
+      const btnLockSource = document.getElementById('btn-lock-source');
+      const btnLockTarget = document.getElementById('btn-lock-target');
+      const btnRescan = document.getElementById('btn-rescan-processes');
+      const btnEmergencyStop = document.getElementById('btn-emergency-stop');
+
+      const sourceNameDisplay = document.getElementById('source-name-display');
+      const sourcePidDisplay = document.getElementById('source-pid-display');
+      const targetNameDisplay = document.getElementById('target-name-display');
+      const targetPidDisplay = document.getElementById('target-pid-display');
+      const hubActiveConn = document.getElementById('hub-active-conn');
+      const toolsConnectorBadge = document.getElementById('tools-connector-badge');
+      const toolChipContainer = document.getElementById('tool-chip-container');
+      const activeToolCount = document.getElementById('active-tool-count');
+
+      const btnTestBuild = document.getElementById('btn-test-build');
+      const btnTestDiag = document.getElementById('btn-test-diag');
+      const btnTestInfo = document.getElementById('btn-test-info');
+
+      function addLog(msg, type = '') {
+        const time = new Date().toTimeString().split(' ')[0];
+        const line = document.createElement('div');
+        line.className = `log-line ${type}`;
+        line.textContent = `[${time}] ${msg}`;
+        hubLogBox.appendChild(line);
+        hubLogBox.scrollTop = hubLogBox.scrollHeight;
+      }
+
+      // Initialize Tools for current target
+      updateToolsForTarget('visual_studio');
+
+      // Connect to Live Local Bridge WebSocket
+      function initWebSocket() {
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
+
+        try {
+          ws = new WebSocket('ws://127.0.0.1:17613');
+
+          ws.onopen = function () {
+            isWsConnected = true;
+            hubBadge.className = 'badge success';
+            hubBadge.textContent = '● Bridge Connected (127.0.0.1:17613)';
+            connBanner.className = 'conn-banner connected';
+            connTitle.textContent = '● Real Local Bridge Connected:';
+            connDetail.innerHTML = 'Live link established with local PC <code>ws://127.0.0.1:17613</code>.';
+            addLog('WebSocket connected to local Python bridge (127.0.0.1:17613).', 'success');
+
+            // Request live processes and topology
+            sendWSMessage({ type: 'list_processes' });
+            sendWSMessage({ type: 'get_topology' });
+          };
+
+          ws.onmessage = function (event) {
+            try {
+              const data = JSON.parse(event.data);
+              handleWSResponse(data);
+            } catch (err) {
+              addLog(`Received raw WS data: ${event.data}`, 'info');
+            }
+          };
+
+          ws.onerror = function () {
+            onWsDisconnected();
+          };
+
+          ws.onclose = function () {
+            onWsDisconnected();
+          };
+        } catch (e) {
+          onWsDisconnected();
+        }
+      }
+
+      function onWsDisconnected() {
+        isWsConnected = false;
+        hubBadge.className = 'badge warning';
+        hubBadge.textContent = '○ Bridge Offline (Ready to launch)';
+        connBanner.className = 'conn-banner disconnected';
+        connTitle.textContent = '○ Local Bridge Inactive:';
+        connDetail.innerHTML = 'To connect to your real PC processes, run <code>start.bat</code> in the <code>ZeroScript</code> folder.';
+      }
+
+      function sendWSMessage(payload) {
+        payload.id = reqIdCounter++;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(payload));
+          return true;
+        } else {
+          // If WS not connected, also query local REST server fallback
+          fallbackAPICall(payload);
+          return false;
+        }
+      }
+
+      function handleWSResponse(data) {
+        if (data.type === 'processes_list' && data.ok) {
+          renderProcessLists(data.browsers || [], data.target_ides || []);
+          addLog(`Live OS processes updated: ${data.browsers?.length || 0} browsers, ${data.target_ides?.length || 0} IDEs.`, 'success');
+        } else if (data.type === 'source_locked') {
+          addLog(`Live Step 1 locked on local machine: ${data.source?.name || 'Selected'} (PID ${data.source?.pid})`, 'success');
+        } else if (data.type === 'target_locked') {
+          addLog(`Live Step 3 locked on local machine: ${data.target?.name || 'Selected'} (PID ${data.target?.pid})`, 'success');
+        } else if (data.type === 'tool_result') {
+          addLog(`Tool result (${data.tool}): ${JSON.stringify(data.result || data.error)}`, data.ok ? 'success' : 'err');
+        } else {
+          addLog(`Bridge Event: ${JSON.stringify(data)}`, 'info');
+        }
+      }
+
+      async function fallbackAPICall(payload) {
+        if (payload.type === 'list_processes') {
+          try {
+            const res = await fetch('/api/processes');
+            const data = await res.json();
+            if (data.ok) {
+              renderProcessLists(data.browsers, data.target_ides);
+            }
+          } catch (e) {}
+        }
+      }
+
+      function renderProcessLists(browsers, ides) {
+        if (browsers && browsers.length) {
+          sourceProcList.innerHTML = '';
+          browsers.forEach((b, idx) => {
+            const div = document.createElement('div');
+            div.className = `proc-item ${idx === 0 ? 'selected' : ''}`;
+            div.dataset.pid = b.pid;
+            div.dataset.name = b.app_name || b.name;
+            div.dataset.title = b.title || b.name;
+            div.innerHTML = `
+              <div class="proc-info">
+                <span class="proc-name">${b.name}</span>
+                <span class="proc-sub">${b.title || b.app_name}</span>
+              </div>
+              <div class="proc-meta">PID: ${b.pid}<br>${b.memory_mb || 0} MB</div>
+            `;
+            sourceProcList.appendChild(div);
+          });
+        }
+
+        if (ides && ides.length) {
+          targetProcList.innerHTML = '';
+          ides.forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.className = `proc-item ${idx === 0 ? 'selected' : ''}`;
+            div.dataset.pid = item.pid;
+            div.dataset.cid = item.connector_id || 'visual_studio';
+            div.dataset.name = item.app_name || item.name;
+            div.dataset.title = item.title || item.name;
+            div.innerHTML = `
+              <div class="proc-info">
+                <span class="proc-name">${item.name}</span>
+                <span class="proc-sub">${item.title || item.app_name}</span>
+              </div>
+              <div class="proc-meta">PID: ${item.pid}<br>${item.memory_mb || 0} MB</div>
+            `;
+            targetProcList.appendChild(div);
+          });
+        }
+      }
+
+      // Toggle Guide box
+      btnGuideToggle.addEventListener('click', () => {
+        guideBox.style.display = guideBox.style.display === 'none' ? 'block' : 'none';
+      });
+
+      // Reconnect button
+      btnReconnectWs.addEventListener('click', () => {
+        addLog('Attempting to connect to ws://127.0.0.1:17613...', 'info');
+        initWebSocket();
+      });
+
+      // Source List Selection
+      sourceProcList.addEventListener('click', (e) => {
+        const item = e.target.closest('.proc-item');
+        if (!item) return;
+        sourceProcList.querySelectorAll('.proc-item').forEach(el => el.classList.remove('selected'));
+        item.classList.add('selected');
+        selectedSource = {
+          pid: item.dataset.pid,
+          name: item.dataset.name,
+          title: item.dataset.title,
+        };
+      });
+
+      // Target List Selection
+      targetProcList.addEventListener('click', (e) => {
+        const item = e.target.closest('.proc-item');
+        if (!item) return;
+        targetProcList.querySelectorAll('.proc-item').forEach(el => el.classList.remove('selected'));
+        item.classList.add('selected');
+        selectedTarget = {
+          pid: item.dataset.pid,
+          cid: item.dataset.cid,
+          name: item.dataset.name,
+          title: item.dataset.title,
+        };
+      });
+
+      // Lock Source
+      btnLockSource.addEventListener('click', () => {
+        sourceNameDisplay.textContent = selectedSource.name;
+        sourcePidDisplay.textContent = `PID: ${selectedSource.pid} • ${selectedSource.title}`;
+        sendWSMessage({
+          type: 'lock_source',
+          source: selectedSource
+        });
+        addLog(`Step 1 Source Process locked: ${selectedSource.name} (PID ${selectedSource.pid})`, 'success');
+      });
+
+      // Lock Target
+      btnLockTarget.addEventListener('click', () => {
+        targetNameDisplay.textContent = selectedTarget.name;
+        targetPidDisplay.textContent = `PID: ${selectedTarget.pid} • ${selectedTarget.title}`;
+        hubActiveConn.textContent = selectedTarget.name;
+        toolsConnectorBadge.textContent = selectedTarget.name;
+
+        updateToolsForTarget(selectedTarget.cid);
+        sendWSMessage({
+          type: 'lock_target',
+          target: selectedTarget
+        });
+        addLog(`Step 3 Target Software locked: ${selectedTarget.name} (PID ${selectedTarget.pid})`, 'success');
+      });
+
+      function updateToolsForTarget(cid) {
+        toolChipContainer.innerHTML = '';
+        let tools = [];
+        if (cid === 'visual_studio') {
+          tools = [
+            'visual_studio/solution_info',
+            'visual_studio/list_projects',
+            'visual_studio/read_source',
+            'visual_studio/write_source',
+            'visual_studio/build_solution',
+            'visual_studio/get_compiler_errors',
+            'visual_studio/run_tests'
+          ];
+        } else if (cid === 'vscode') {
+          tools = [
+            'vscode/workspace_info',
+            'vscode/list_files',
+            'vscode/read_file',
+            'vscode/write_file',
+            'vscode/edit_file',
+            'vscode/get_diagnostics',
+            'vscode/run_command'
+          ];
+        } else if (cid === 'unity') {
+          tools = [
+            'unity/project_info',
+            'unity/list_assets',
+            'unity/read_script',
+            'unity/write_script',
+            'unity/trigger_compilation',
+            'unity/run_editor_tests'
+          ];
+        } else if (cid === 'android_studio') {
+          tools = [
+            'android_studio/project_info',
+            'android_studio/list_source_files',
+            'android_studio/read_source',
+            'android_studio/write_source',
+            'android_studio/build_gradle',
+            'android_studio/get_build_errors'
+          ];
+        } else {
+          tools = [
+            'roblox/execute_luau',
+            'roblox/inspect_datamodel',
+            'roblox/get_script_source',
+            'roblox/set_script_source',
+            'roblox/insert_model'
+          ];
+        }
+
+        activeToolCount.textContent = tools.length;
+        tools.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'tool-chip';
+          const prefix = t.split('/')[0].toUpperCase();
+          div.innerHTML = `<span class="tag">${prefix}</span> ${t}`;
+          div.addEventListener('click', () => {
+            addLog(`Executing MCP Tool: ${t}...`, 'info');
+            sendWSMessage({
+              type: 'call_tool',
+              name: t,
+              arguments: {}
+            });
+          });
+          toolChipContainer.appendChild(div);
+        });
+      }
+
+      // Server Toggle
+      btnToggleServer.addEventListener('click', () => {
+        isServerRunning = !isServerRunning;
+        if (isServerRunning) {
+          btnToggleServer.textContent = 'Stop Server';
+          btnToggleServer.className = 'btn btn-danger btn-sm';
+          hubWsVal.textContent = 'ws://127.0.0.1:17613';
+          hubWsVal.style.color = 'var(--success)';
+          addLog('Master Bridge Server enabled.', 'success');
+          initWebSocket();
+        } else {
+          btnToggleServer.textContent = 'Start Server';
+          btnToggleServer.className = 'btn btn-success btn-sm';
+          hubWsVal.textContent = 'Offline (Stopped)';
+          hubWsVal.style.color = 'var(--danger)';
+          if (ws) ws.close();
+          addLog('Master Bridge Server paused.', 'warn');
+        }
+      });
+
+      // Rescan Processes
+      btnRescan.addEventListener('click', () => {
+        btnRescan.textContent = 'Scanning…';
+        sendWSMessage({ type: 'list_processes' });
+        setTimeout(() => {
+          btnRescan.textContent = '🔄 Scan OS Procs';
+        }, 600);
+      });
+
+      // Emergency Halt
+      btnEmergencyStop.addEventListener('click', () => {
+        addLog('🛑 Emergency Halt triggered! All active executions paused.', 'warn');
+      });
+
+      // Test Build
+      btnTestBuild.addEventListener('click', () => {
+        const toolName = selectedTarget.cid === 'visual_studio' ? 'visual_studio/build_solution' : `${selectedTarget.cid}/trigger_compilation`;
+        addLog(`Invoking live build tool [${toolName}] for ${selectedTarget.name}...`, 'info');
+        sendWSMessage({
+          type: 'call_tool',
+          name: toolName,
+          arguments: {}
+        });
+      });
+
+      // Test Diagnostics
+      btnTestDiag.addEventListener('click', () => {
+        const toolName = selectedTarget.cid === 'visual_studio' ? 'visual_studio/get_compiler_errors' : `${selectedTarget.cid}/get_diagnostics`;
+        addLog(`Checking diagnostics [${toolName}]...`, 'info');
+        sendWSMessage({
+          type: 'call_tool',
+          name: toolName,
+          arguments: {}
+        });
+      });
+
+      // Test Project Info
+      btnTestInfo.addEventListener('click', () => {
+        const toolName = selectedTarget.cid === 'visual_studio' ? 'visual_studio/solution_info' : `${selectedTarget.cid}/workspace_info`;
+        addLog(`Querying project info [${toolName}]...`, 'info');
+        sendWSMessage({
+          type: 'call_tool',
+          name: toolName,
+          arguments: {}
+        });
+      });
+
+      // Initial auto-connect
+      initWebSocket();
+      setInterval(() => {
+        if (!isWsConnected && isServerRunning) {
+          initWebSocket();
+        }
+      }, 5000);
+
+    })();
+  </script>
+</body>
+</html>

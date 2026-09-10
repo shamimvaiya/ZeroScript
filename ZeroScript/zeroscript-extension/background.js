@@ -24,14 +24,18 @@ const HEARTBEAT_MS = 10000;
 const STALE_SOCKET_MS = 25000;
 const REQUEST_TIMEOUT_DEFAULT = 130000; // a bit above the 120s tool timeout
 
+let manualStop = false;
 let ws = null;
 let connected = false;
+let connectionState = "disconnected"; // "connected" | "disconnected" | "connecting" | "reconnecting" | "error"
+let lastError = null;
 let reconnectDelay = RECONNECT_MIN;
 let reconnectTimer = null;
 let heartbeatTimer = null;
 let lastMessageAt = 0; // timestamp of the last frame received from the bridge
 let nextId = 1;
 const pending = new Map(); // id -> {resolve, timer}
+let activeConnectorCache = "roblox";
 let toolsCache = [];
 let mcpAlive = false;
 let serversCache = [];
@@ -67,18 +71,37 @@ function recordAudit(entry) {
   broadcastStatus();
 }
 
+const NATIVE_HOST_NAME = "com.devilx.agent";
+const LEGACY_NATIVE_HOST_NAME = "com.zeroscript.agent";
+
+function sendToNativeHost(payload, callback) {
+  if (!chrome.runtime.sendNativeMessage) {
+    if (callback) callback({ ok: false, error: "Native messaging not supported" });
+    return;
+  }
+  chrome.runtime.sendNativeMessage(NATIVE_HOST_NAME, payload, (resp) => {
+    if (chrome.runtime.lastError) {
+      chrome.runtime.sendNativeMessage(LEGACY_NATIVE_HOST_NAME, payload, (legacyResp) => {
+        if (callback) callback(legacyResp);
+      });
+      return;
+    }
+    if (callback) callback(resp);
+  });
+}
+
 function checkNativeHost() {
   if (!chrome.runtime.sendNativeMessage) {
     nativeHostAvailable = false;
     return;
   }
   try {
-    chrome.runtime.sendNativeMessage("com.zeroscript.agent", { action: "ping" }, (response) => {
-      if (chrome.runtime.lastError || !response || response.ok === false) {
+    sendToNativeHost({ action: "ping" }, (response) => {
+      if (!response || response.ok === false) {
         nativeHostAvailable = false;
       } else {
         nativeHostAvailable = true;
-        log("native messaging host active");
+        log("native messaging host active (" + (response.host || NATIVE_HOST_NAME) + ")");
       }
       broadcastStatus();
     });
@@ -92,21 +115,37 @@ function log(...a) {
 }
 
 // ── WebSocket lifecycle ─────────────────────────────────────────────────
-function connect() {
+function connect(force = false) {
+  if (manualStop && !force) {
+    log("connect ignored because manualStop is true");
+    return;
+  }
+  if (force) {
+    manualStop = false;
+  }
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
     return;
   }
   clearTimeout(reconnectTimer);
+  if (connectionState !== "reconnecting") {
+    connectionState = "connecting";
+    broadcastStatus();
+  }
   try {
     ws = new WebSocket(URL);
   } catch (e) {
     log("WebSocket ctor failed", e);
+    connectionState = "error";
+    lastError = String(e && e.message ? e.message : e);
     scheduleReconnect();
     return;
   }
 
   ws.onopen = () => {
+    manualStop = false;
     connected = true;
+    connectionState = "connected";
+    lastError = null;
     reconnectDelay = RECONNECT_MIN;
     lastMessageAt = Date.now();
     log("connected to bridge");
@@ -134,19 +173,37 @@ function connect() {
     serversCache = [];
     stopHeartbeat();
     failAllPending("bridge connection closed");
+    if (manualStop) {
+      connectionState = "disconnected";
+      broadcastStatus();
+      return;
+    }
+    if (connectionState !== "disconnected") {
+      connectionState = "reconnecting";
+    }
     broadcastStatus();
     scheduleReconnect();
   };
 
   ws.onerror = () => {
+    connectionState = "error";
+    lastError = "Bridge WebSocket connection failed";
+    broadcastStatus();
     // onclose will follow; nothing to do here but avoid an unhandled error.
     try { ws.close(); } catch {}
   };
 }
 
 function scheduleReconnect() {
+  if (manualStop) {
+    connectionState = "disconnected";
+    broadcastStatus();
+    return;
+  }
   clearTimeout(reconnectTimer);
-  reconnectTimer = setTimeout(connect, reconnectDelay);
+  connectionState = "reconnecting";
+  broadcastStatus();
+  reconnectTimer = setTimeout(() => connect(false), reconnectDelay);
   reconnectDelay = Math.min(reconnectDelay * 1.7, RECONNECT_MAX);
 }
 
@@ -252,12 +309,22 @@ function handleBridgeMessage(msg) {
   if ("studio_proc" in msg && (typeof msg.studio_proc === "boolean" || msg.studio_proc === null)) {
     studioProc = msg.studio_proc;
   }
+  if (msg.active_connector && typeof msg.active_connector === "string") {
+    activeConnectorCache = msg.active_connector;
+  }
   if (Array.isArray(msg.connectors)) {
     connectorsCache = msg.connectors;
   }
   if (msg.type === "connectors") {
     if (Array.isArray(msg.connectors)) connectorsCache = msg.connectors;
-    resolvePending(msg.id, { ok: true, connectors: connectorsCache });
+    if (msg.active_connector) activeConnectorCache = msg.active_connector;
+    resolvePending(msg.id, { ok: true, connectors: connectorsCache, active_connector: activeConnectorCache });
+    broadcastStatus();
+    return;
+  }
+  if (msg.type === "connector_changed") {
+    if (msg.active) activeConnectorCache = msg.active;
+    resolvePending(msg.id, { ok: !!msg.ok, active: activeConnectorCache });
     broadcastStatus();
     return;
   }
@@ -271,6 +338,7 @@ function handleBridgeMessage(msg) {
     if (Array.isArray(msg.tools)) toolsCache = msg.tools;
     if (Array.isArray(msg.servers)) serversCache = msg.servers;
     if (Array.isArray(msg.connectors)) connectorsCache = msg.connectors;
+    if (msg.active_connector) activeConnectorCache = msg.active_connector;
     broadcastStatus();
     return;
   }
@@ -329,11 +397,13 @@ function failAllPending(reason) {
   pending.clear();
 }
 
-// ── status push to any open DeepSeek tab + popup ─────────────────────────
+// ── status push to any open AI tab + popup ─────────────────────────
 function statusObj() {
   return {
     type: "zs-status",
     connected,
+    connectionState, // "connected" | "disconnected" | "connecting" | "reconnecting" | "error"
+    lastError,
     mcpAlive,
     studio: studioConnected,
     studioApp,
@@ -341,6 +411,7 @@ function statusObj() {
     tools: toolsCache.length,
     servers: serversCache,
     connectors: connectorsCache,
+    active_connector: activeConnectorCache,
     nativeHost: nativeHostAvailable,
     recentAudit: auditLog.slice(0, 10),
   };
@@ -353,12 +424,62 @@ function broadcastStatus() {
   });
 }
 
+async function syncCustomContentScripts(customProviders) {
+  if (!chrome.scripting || !chrome.scripting.registerContentScripts) return;
+  try {
+    const existing = await chrome.scripting.getRegisteredContentScripts();
+    const existingIds = existing.map((s) => s.id);
+    if (existingIds.length > 0) {
+      await chrome.scripting.unregisterContentScripts({ ids: existingIds });
+    }
+
+    const scriptsToRegister = [];
+    for (const p of customProviders || []) {
+      if (p.enabled !== false && p.urlPattern) {
+        let pat = p.urlPattern.trim();
+        if (!pat.includes("://")) pat = `https://${pat}`;
+        if (!pat.endsWith("*")) pat = pat.endsWith("/") ? `${pat}*` : `${pat}/*`;
+        scriptsToRegister.push({
+          id: `script_${p.id}`,
+          matches: [pat],
+          js: [
+            "core/protocol.js",
+            "core/connectors.js",
+            "core/config.js",
+            "core/parser.js",
+            "core/main.js",
+            "core/detector.js",
+            "core/floating_ui.js",
+          ],
+          css: ["overlay.css"],
+          runAt: "document_idle",
+        });
+      }
+    }
+
+    if (scriptsToRegister.length > 0) {
+      await chrome.scripting.registerContentScripts(scriptsToRegister);
+    }
+  } catch (err) {
+    console.warn("[background] Error syncing custom content scripts:", err);
+  }
+}
+
+// Initial sync of custom providers on SW startup
+chrome.storage.local.get("custom_providers", (data) => {
+  if (data && data.custom_providers) {
+    syncCustomContentScripts(data.custom_providers);
+  }
+});
+
 // ── messages from content.js / popup.js ─────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     switch (msg.type) {
       case "status":
-        if (!connected) connect(); // self-heal after a worker wake-up
+        if (!connected && connectionState !== "connecting" && connectionState !== "reconnecting") {
+          connect(); // self-heal after a worker wake-up
+        }
         checkNativeHost();
         sendResponse(statusObj());
         break;
@@ -367,42 +488,104 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ ok: true, available: nativeHostAvailable });
         break;
       case "start_agent": {
-        if (!chrome.runtime.sendNativeMessage) {
-          sendResponse({ ok: false, error: "Native messaging not supported in this environment" });
+        manualStop = false;
+        if (!chrome.runtime.sendNativeMessage || !nativeHostAvailable) {
+          connectionState = "disconnected";
+          sendResponse({
+            ok: false,
+            needs_manual_start: true,
+            error: "Native messaging host not found. Please run start.bat on your PC to launch Devil-X.",
+          });
           break;
         }
-        chrome.runtime.sendNativeMessage("com.zeroscript.agent", { action: "start", windowless: true }, (resp) => {
-          if (chrome.runtime.lastError) {
-            sendResponse({ ok: false, error: chrome.runtime.lastError.message });
+        connectionState = "connecting";
+        broadcastStatus();
+        sendToNativeHost({ action: "start", windowless: true }, (resp) => {
+          if (!resp || resp.ok === false) {
+            connectionState = "error";
+            lastError = (resp && resp.error) || "Failed to start agent via native host";
+            broadcastStatus();
+            sendResponse({ ok: false, error: lastError });
           } else {
-            setTimeout(connect, 1500);
+            setTimeout(() => connect(true), 1500);
             sendResponse(resp || { ok: true });
           }
         });
         break;
       }
       case "stop_agent": {
-        if (!chrome.runtime.sendNativeMessage) {
-          sendResponse({ ok: false, error: "Native messaging not supported" });
-          break;
+        manualStop = true;
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+        stopHeartbeat();
+        // If connected, ask bridge to shutdown gracefully
+        if (connected && ws && ws.readyState === WebSocket.OPEN) {
+          send({ type: "stop_bridge" }, 2000).catch(() => {});
         }
-        chrome.runtime.sendNativeMessage("com.zeroscript.agent", { action: "stop" }, (resp) => {
-          sendResponse(resp || { ok: true });
-        });
+        connectionState = "disconnected";
+        if (ws) {
+          try { ws.close(); } catch {}
+        }
+        connected = false;
+        if (chrome.runtime.sendNativeMessage && nativeHostAvailable) {
+          sendToNativeHost({ action: "stop" }, (resp) => {
+            broadcastStatus();
+            sendResponse(resp || { ok: true });
+          });
+        } else {
+          broadcastStatus();
+          sendResponse({ ok: true });
+        }
         break;
       }
       case "restart_agent": {
-        if (!chrome.runtime.sendNativeMessage) {
-          sendResponse({ ok: false, error: "Native messaging not supported" });
+        manualStop = false;
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+        if (connected && ws && ws.readyState === WebSocket.OPEN) {
+          send({ type: "stop_bridge" }, 2000).catch(() => {});
+        }
+        if (!chrome.runtime.sendNativeMessage || !nativeHostAvailable) {
+          connectionState = "reconnecting";
+          connect(true);
+          sendResponse({ ok: true });
           break;
         }
-        chrome.runtime.sendNativeMessage("com.zeroscript.agent", { action: "restart", windowless: true }, (resp) => {
-          setTimeout(connect, 2000);
+        connectionState = "connecting";
+        broadcastStatus();
+        sendToNativeHost({ action: "restart", windowless: true }, (resp) => {
+          setTimeout(() => connect(true), 2000);
           sendResponse(resp || { ok: true });
         });
         break;
       }
+      case "reconnect": {
+        manualStop = false;
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+        reconnectDelay = RECONNECT_MIN;
+        connectionState = "reconnecting";
+        broadcastStatus();
+        if (ws) {
+          try { ws.close(); } catch {}
+        }
+        connect(true);
+        sendResponse({ ok: true });
+        break;
+      }
       case "emergency_stop_all": {
+        manualStop = true;
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+        stopHeartbeat();
+        if (connected && ws && ws.readyState === WebSocket.OPEN) {
+          send({ type: "stop_bridge" }, 2000).catch(() => {});
+        }
+        connectionState = "disconnected";
+        if (ws) {
+          try { ws.close(); } catch {}
+        }
+        connected = false;
         // Broadcast stop to all AI tabs immediately
         chrome.tabs.query({ url: PROVIDER_URLS }, (tabs) => {
           for (const t of tabs) {
@@ -410,7 +593,67 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           }
         });
         recordAudit({ tool: "EMERGENCY_STOP", ok: true, note: "User triggered emergency halt on all tabs" });
+        broadcastStatus();
         sendResponse({ ok: true });
+        break;
+      }
+      case "get_custom_providers": {
+        chrome.storage.local.get("custom_providers", (data) => {
+          sendResponse({ ok: true, providers: data.custom_providers || [] });
+        });
+        break;
+      }
+      case "save_custom_provider": {
+        chrome.storage.local.get("custom_providers", (data) => {
+          const list = data.custom_providers || [];
+          const idx = list.findIndex((p) => p.id === msg.provider.id);
+          if (idx >= 0) list[idx] = msg.provider;
+          else list.push(msg.provider);
+          chrome.storage.local.set({ custom_providers: list }, () => {
+            syncCustomContentScripts(list);
+            sendResponse({ ok: true, providers: list });
+          });
+        });
+        break;
+      }
+      case "delete_custom_provider": {
+        chrome.storage.local.get("custom_providers", (data) => {
+          const list = (data.custom_providers || []).filter((p) => p.id !== msg.id);
+          chrome.storage.local.set({ custom_providers: list }, () => {
+            syncCustomContentScripts(list);
+            sendResponse({ ok: true, providers: list });
+          });
+        });
+        break;
+      }
+      case "check_local_ai": {
+        if (!connected) {
+          sendResponse({ ok: false, error: "Bridge not connected" });
+          break;
+        }
+        const r = await send({
+          type: "check_local_ai",
+          provider: msg.provider || "ollama",
+          base_url: msg.base_url,
+          model: msg.model,
+        }, 8000);
+        sendResponse(r);
+        break;
+      }
+      case "test_provider_selector": {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (!tabs || !tabs[0]) {
+            sendResponse({ ok: false, error: "No active tab found" });
+            return;
+          }
+          chrome.tabs.sendMessage(tabs[0].id, { type: "test_provider_selector", selectorType: msg.selectorType, config: msg.config }, (res) => {
+            if (chrome.runtime.lastError) {
+              sendResponse({ ok: false, error: "Cannot reach active tab: " + chrome.runtime.lastError.message });
+            } else {
+              sendResponse(res || { ok: false, error: "No response from tab" });
+            }
+          });
+        });
         break;
       }
       case "get_audit_log": {
@@ -423,8 +666,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         break;
       }
       case "set_active_connector": {
+        if (msg.connector_id) {
+          activeConnectorCache = msg.connector_id;
+        }
         const r = await send({ type: "set_active_connector", connector_id: msg.connector_id }, 5000);
-        sendResponse(r);
+        if (r && r.active) {
+          activeConnectorCache = r.active;
+        }
+        broadcastStatus();
+        sendResponse(r || { ok: true, active: activeConnectorCache });
         break;
       }
       case "list_tools": {

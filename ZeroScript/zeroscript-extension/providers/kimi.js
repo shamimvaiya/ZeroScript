@@ -461,7 +461,7 @@ const ZSProvider = (() => {
   function modeWarning() {
     if (nativeAgentModeOn())
       return `Switch the model picker off <b>K3 Swarm</b> (pick <b>K3</b> or <b>Instantané</b>) - ` +
-        `Kimi's own agentic mode replaces the ZeroScript commands with its native tools and breaks the agent loop.`;
+        `Kimi's own agentic mode replaces the Devil-X commands with its native tools and breaks the agent loop.`;
     return "";
   }
 
@@ -794,7 +794,7 @@ const ZSProvider = (() => {
     // Roblox Studio - model behavior, not something the prompt fully prevents.
     unstableWarning:
       "Kimi sometimes uses its own native tools instead of the Roblox commands (model behavior, not the extension). " +
-      "If it stops acting in Roblox Studio and answers in plain text or runs its own tools, remind it to use the ZeroScript commands - or start a new session.",
+      "If it stops acting in Roblox Studio and answers in plain text or runs its own tools, remind it to use the Devil-X commands - or start a new session.",
     init({ diag: d } = {}) { if (d) diag = d; },
     // turns
     allItems, isUserItem, isAssistantItem, itemText, classifyText,

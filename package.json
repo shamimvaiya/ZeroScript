@@ -1,0 +1,13 @@
+{
+  "name": "devilx-platform",
+  "version": "1.5.3",
+  "private": true,
+  "description": "Devil-X Universal AI-to-Software Control Platform",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "mkdir -p dist && cp -r ZeroScript/zeroscript-extension/* dist/",
+    "lint": "node -c ZeroScript/zeroscript-extension/*.js ZeroScript/zeroscript-extension/*/*.js",
+    "test": "node ZeroScript/zeroscript-extension/test-parser.js && node ZeroScript/zeroscript-extension/test-chatgpt.js"
+  }
+}

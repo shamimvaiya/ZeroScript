@@ -662,7 +662,7 @@ const ZSProvider = (() => {
     if (!text || text.length <= SEND_MAX) return text;
     const omitted = text.length - SEND_MAX;
     const marker =
-      `\n\n[…ZeroScript: result truncated to fit DeepSeek's ${SEND_CAP}-character ` +
+      `\n\n[…Devil-X: result truncated to fit DeepSeek's ${SEND_CAP}-character ` +
       `input limit - ${omitted} of ${text.length} characters omitted. Do NOT re-run ` +
       `the command; work with the head and tail shown here…]\n\n`;
     const budget = SEND_MAX - marker.length;

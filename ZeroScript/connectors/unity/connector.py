@@ -14,6 +14,7 @@ class UnityConnector(BaseConnector):
     name = "Unity Editor"
     description = "Controls Unity Editor scenes, game objects, and C# scripts via local bridge"
     target_software = "Unity"
+    implementation_status = "NOT IMPLEMENTED"
 
     def is_available(self) -> bool:
         if sys.platform == "win32":

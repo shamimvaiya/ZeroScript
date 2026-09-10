@@ -358,7 +358,7 @@ const ZSProvider = (() => {
     const lines = String(text).split("\n");
     if (text.length <= SEND_MAX_CHARS && lines.length <= SEND_MAX_LINES) return text;
     const marker = (what) =>
-      `\n\n[…ZeroScript: result truncated (${what}) so it can be pasted into ` +
+      `\n\n[…Devil-X: result truncated (${what}) so it can be pasted into ` +
       `Gemini's composer without freezing the page. Do NOT re-run the command; ` +
       `work with the head and tail shown here…]\n\n`;
     let out, note;

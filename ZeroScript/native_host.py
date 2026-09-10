@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""ZeroScript Native Messaging Host for Chrome / Chromium browsers.
+"""Devil-X Native Messaging Host for Chrome / Chromium browsers.
 
 Allows the browser extension to query bridge status, launch the local bridge
 in the background (without popping open an invasive cmd terminal), stop it,
@@ -40,13 +40,11 @@ def send_message(message: dict) -> None:
 
 def is_port_listening(port: int = BRIDGE_PORT) -> bool:
     """Check if the bridge port is currently in use."""
-    if sys.platform != "win32":
-        return False
+    import socket
     try:
-        cmd = f'netstat -aon | findstr :{port} | findstr LISTENING'
-        out = subprocess.check_output(cmd, shell=True, text=True, timeout=2.0)
-        return bool(out.strip())
-    except Exception:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+            return True
+    except OSError:
         return False
 
 
@@ -144,7 +142,8 @@ def main():
             response = {"id": rid, "ok": True}
 
             if action == "ping":
-                response.update({"action": "pong", "host": "com.zeroscript.agent", "version": "1.5.3"})
+                host_id = msg.get("host") or "com.devilx.agent"
+                response.update({"action": "pong", "host": host_id, "version": "1.5.3"})
 
             elif action == "status":
                 listening = is_port_listening(BRIDGE_PORT)
